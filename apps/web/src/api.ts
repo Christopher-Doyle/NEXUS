@@ -1,5 +1,5 @@
 export type Step = { id: string; ordinal: number; description: string; tool_name: 'read_file' | 'write_report'; args: { path?: string; filename?: string }; args_hash: string; risk_level: string; state: string; dependencies: number[] }
-export type Task = { id: string; goal: string; constraints: string[]; success_criteria: string | null; capabilities: string[]; network_access: boolean; workspace_path: string | null; input_files: string[]; state: string; plan_version: number; created_at: string; updated_at: string; steps: Step[] }
+export type Task = { id: string; goal: string; constraints: string[]; success_criteria: string | null; capabilities: string[]; network_access: boolean; workspace_path: string | null; input_files: string[]; state: string; plan_version: number; created_at: string; updated_at: string; completed_at: string | null; steps: Step[] }
 export type TaskDraft = { goal: string; constraints: string[]; success_criteria: string | null; capabilities: ('read_file' | 'write_report')[]; network_access: boolean; workspace_path: string | null; input_files: { name: string; content: string }[] }
 export type Approval = { id: string; task_id: string; step_id: string; scope_hash: string; requested_action: string; decision: string; expires_at: string | null }
 export type JournalEvent = { id: number; type: string; occurred_at: string; payload: Record<string, unknown> }
@@ -16,7 +16,13 @@ async function request<T>(path: string, method = 'GET', body?: unknown): Promise
 }
 
 export const api = {
-  listTasks: () => request<{ items: Task[]; total: number }>('/tasks'),
+  listTasks: (filters?: { q?: string; state?: string; offset?: number }) => {
+    const params = new URLSearchParams()
+    if (filters?.q) params.set('q', filters.q)
+    if (filters?.state) params.set('state', filters.state)
+    if (filters?.offset) params.set('offset', String(filters.offset))
+    return request<{ items: Task[]; total: number }>(`/tasks${params.size ? `?${params}` : ''}`)
+  },
   getTask: (id: string) => request<Task>(`/tasks/${id}`),
   createTask: (draft: TaskDraft) => request<Task>('/tasks', 'POST', draft),
   planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),

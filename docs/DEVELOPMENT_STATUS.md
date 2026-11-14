@@ -22,8 +22,9 @@ number does not imply a 60% complete release or passing security gates.
   approval-gated Markdown report write.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
-- Dashboard, task composer, plan review and execution cockpit with timeline,
-  approval controls, journal and artifact links.
+- Dashboard, task composer, plan review, execution cockpit and persisted task
+  history with search, status filtering and pagination. The cockpit includes a
+  timeline, approval controls, journal and artifact links.
 
 ## Incomplete
 
@@ -42,7 +43,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: three migrations applied locally.
-- `python -m pytest -q`: 11 backend tests passed, one dependency deprecation warning.
+- `python -m pytest -q`: 18 backend tests passed, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: two frontend API tests passed.
@@ -51,12 +52,13 @@ number does not imply a 60% complete release or passing security gates.
   persisted history after API restart, and rejection with no artifact passed.
   Four synthetic screenshots were captured and visually inspected.
 
-Remote CI and a real Ollama invocation have not been verified.
+Remote CI passed for the cross-platform path validation fix (`f9bab4f`). A
+real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `65c2b01` (demo execution).
-Current reliability and screenshot changes: commit and push pending.
+Latest pushed commit before this checkpoint: `f9bab4f` (cross-platform path
+validation). History view changes: commit and push pending.
 
 ## Known risks
 
@@ -68,6 +70,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the reliability fixes and verified screenshots. Then test
-concurrent workers and SSE replay, implement task history filters and worker
-status, and complete the remaining P0 acceptance checks.
+Commit and push the task history filters. Then test concurrent workers and
+SSE replay, implement worker status and artifact browsing, and complete the
+remaining P0 acceptance checks.

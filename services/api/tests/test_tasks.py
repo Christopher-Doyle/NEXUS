@@ -50,6 +50,8 @@ def test_task_planning_and_editing(tmp_path) -> None:
         assert invalid.status_code == 422
         fetched = client.get(f"/api/v1/tasks/{task_id}")
         assert fetched.json()["plan_version"] == version + 1
+        assert client.get("/api/v1/tasks", params={"state": "review_required", "q": "sample"}).json()["total"] == 1
+        assert client.get("/api/v1/tasks", params={"state": "completed"}).json()["total"] == 0
     finally:
         app.dependency_overrides.clear()
         engine.dispose()

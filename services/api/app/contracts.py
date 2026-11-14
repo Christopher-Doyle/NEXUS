@@ -74,6 +74,7 @@ class TaskView(BaseModel):
     plan_version: int
     created_at: datetime
     updated_at: datetime
+    completed_at: datetime | None
     steps: list[StepView]
 
 

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery } from '@tansta
 import { BrowserRouter, Link, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { api, type Step, type TaskDraft } from './api'
 import { Cockpit } from './Cockpit'
+import { History } from './History'
 import './styles.css'
 
 const queryClient = new QueryClient()
@@ -11,7 +12,7 @@ const Status = ({ state }: { state: string }) => <span className={`chip ${state}
 
 function Dashboard() {
   const health = useQuery({ queryKey: ['health'], queryFn: async () => { const response = await fetch('/health'); if (!response.ok) throw new Error('API unavailable'); return response.json() as Promise<{ status: string }> }, retry: false, refetchInterval: 15000 })
-  const tasks = useQuery({ queryKey: ['tasks'], queryFn: api.listTasks })
+  const tasks = useQuery({ queryKey: ['tasks'], queryFn: () => api.listTasks() })
   const model = useQuery({ queryKey: ['model'], queryFn: api.modelStatus, retry: false })
   return <main>
     <div className="page-heading"><p className="kicker">Workspace overview</p><h1>Make every action visible.</h1><p>Plan, approve, and verify local AI workflows from one place.</p></div>
@@ -68,6 +69,6 @@ function PlanReview() {
   </main>
 }
 
-function App() { return <div className="app-shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><nav aria-label="Primary navigation"><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div></aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /></Routes></div> }
+function App() { return <div className="app-shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><nav aria-label="Primary navigation"><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link><Link to="/history">History</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div></aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /></Routes></div> }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>)

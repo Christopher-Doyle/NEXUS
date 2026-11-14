@@ -16,7 +16,7 @@ from app.db import get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
-from app.state import transition
+from app.state import TRANSITIONS, transition
 from app.tool_policy import ToolDenied, workspace_file
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
@@ -38,6 +38,7 @@ def task_view(task: Task) -> TaskView:
         plan_version=task.plan_version,
         created_at=task.created_at.replace(tzinfo=UTC) if task.created_at.tzinfo is None else task.created_at,
         updated_at=task.updated_at.replace(tzinfo=UTC) if task.updated_at.tzinfo is None else task.updated_at,
+        completed_at=(task.completed_at.replace(tzinfo=UTC) if task.completed_at.tzinfo is None else task.completed_at) if task.completed_at else None,
         steps=[StepView(
             id=step.id, ordinal=step.ordinal, description=step.description,
             tool_name=step.tool_name, args=json.loads(step.args_json), args_hash=step.args_hash,
@@ -127,11 +128,16 @@ def create_task(body: TaskCreate, db: DbSession) -> TaskView:
 
 
 @router.get("", response_model=TaskList)
-def list_tasks(db: DbSession, limit: int = 20, offset: int = 0) -> TaskList:
-    if not 1 <= limit <= 100 or offset < 0:
+def list_tasks(db: DbSession, limit: int = 20, offset: int = 0, state: str | None = None, q: str | None = None) -> TaskList:
+    if not 1 <= limit <= 100 or offset < 0 or (state is not None and state not in TRANSITIONS) or (q is not None and len(q) > 100):
         raise HTTPException(status_code=422, detail="Invalid pagination")
-    rows = db.scalars(select(Task).options(selectinload(Task.steps)).order_by(Task.created_at.desc(), Task.id.desc()).limit(limit).offset(offset)).all()
-    total = db.scalar(select(func.count()).select_from(Task)) or 0
+    criteria = []
+    if state is not None:
+        criteria.append(Task.state == state)
+    if q:
+        criteria.append(Task.goal.ilike(f"%{q}%"))
+    rows = db.scalars(select(Task).options(selectinload(Task.steps)).where(*criteria).order_by(Task.created_at.desc(), Task.id.desc()).limit(limit).offset(offset)).all()
+    total = db.scalar(select(func.count()).select_from(Task).where(*criteria)) or 0
     return TaskList(items=[task_view(task) for task in rows], total=total)
 
 
