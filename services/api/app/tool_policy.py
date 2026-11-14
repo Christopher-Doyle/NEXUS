@@ -5,7 +5,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from app.models import PlanStep, Task
-from app.planning import ARG_SCHEMAS, args_hash
+from app.planning import ARG_SCHEMAS, args_hash, safe_relative_path
 
 
 class ToolDenied(Exception):
@@ -21,7 +21,7 @@ def validate_invocation(task: Task, step: PlanStep) -> None:
         raise ToolDenied("Tool arguments are invalid") from exc
     if args_hash(args) != step.args_hash:
         raise ToolDenied("Tool arguments changed after plan validation")
-    if step.tool_name == "read_file" and (Path(args["path"]).is_absolute() or ".." in Path(args["path"]).parts):
+    if step.tool_name == "read_file" and not safe_relative_path(args["path"]):
         raise ToolDenied("Read path is outside the task workspace")
 
 
@@ -32,10 +32,9 @@ def approval_scope(task: Task, step: PlanStep) -> str:
 
 def workspace_file(root: str, relative: str) -> Path:
     base = Path(root).resolve(strict=True)
-    path = Path(relative)
-    if path.is_absolute() or ".." in path.parts:
+    if not safe_relative_path(relative):
         raise ToolDenied("Only files inside the selected workspace may be read")
-    candidate = (base / path).resolve(strict=True)
+    candidate = (base / relative).resolve(strict=True)
     if not candidate.is_relative_to(base) or not candidate.is_file():
         raise ToolDenied("File is outside the selected workspace")
     if candidate.suffix.lower() not in {".md", ".txt"}:

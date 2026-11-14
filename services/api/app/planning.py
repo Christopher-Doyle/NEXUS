@@ -1,6 +1,6 @@
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -20,6 +20,12 @@ class WriteReportArgs(BaseModel):
 
 
 ARG_SCHEMAS = {"read_file": ReadFileArgs, "write_report": WriteReportArgs}
+
+
+def safe_relative_path(value: str) -> bool:
+    path = Path(value)
+    windows = PureWindowsPath(value)
+    return not (path.is_absolute() or value.startswith("/") or windows.drive or "\\" in value or ".." in path.parts)
 
 
 def args_hash(args: dict) -> str:
@@ -42,7 +48,7 @@ def validate_steps(steps: list[StepInput], capabilities: list[str]) -> list[Step
             dependency < 1 or dependency >= ordinal for dependency in step.dependencies
         ):
             raise ValueError(f"Step {ordinal} has invalid dependencies")
-        if step.tool_name == "read_file" and Path(typed_args.path).is_absolute():
+        if step.tool_name == "read_file" and not safe_relative_path(typed_args.path):
             raise ValueError("Read paths must be relative to the task workspace")
         validated.append(step.model_copy(update={"args": typed_args.model_dump()}))
     return validated
