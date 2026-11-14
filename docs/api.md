@@ -10,11 +10,12 @@ authentication scheme.
 | GET | `/health` | Process liveness |
 | GET | `/ready` | Database connection check |
 | POST | `/api/v1/tasks` | Create a draft task |
-| GET | `/api/v1/tasks` | List tasks, bounded pagination |
+| GET | `/api/v1/tasks` | List tasks with bounded pagination, `q` goal search and `state` filter |
 | GET | `/api/v1/tasks/{id}` | Read a task and its steps |
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
 | GET | `/api/v1/model/status` | Check configured local Ollama model |
+| GET | `/api/v1/worker/status` | Recent worker heartbeat and active process count |
 | POST | `/api/v1/tasks/{id}/start` | Queue a reviewed plan |
 | POST | `/api/v1/tasks/{id}/pause` | Pause after the current step |
 | POST | `/api/v1/tasks/{id}/resume` | Resume a paused task |

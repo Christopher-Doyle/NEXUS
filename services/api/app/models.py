@@ -108,3 +108,10 @@ class ToolGrant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeat"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

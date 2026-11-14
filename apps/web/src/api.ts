@@ -27,6 +27,7 @@ export const api = {
   createTask: (draft: TaskDraft) => request<Task>('/tasks', 'POST', draft),
   planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),
   modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
+  workerStatus: () => request<{ active: boolean; active_count: number; last_seen_at: string | null }>('/worker/status'),
   editPlan: (task: Task, steps: Step[]) => request<Task>(`/tasks/${task.id}/steps`, 'PATCH', { plan_version: task.plan_version, steps: steps.map(({ description, tool_name, args, dependencies }) => ({ description, tool_name, args, dependencies })) }),
   startTask: (id: string) => request<Task>(`/tasks/${id}/start`, 'POST'),
   cancelTask: (id: string) => request<Task>(`/tasks/${id}/cancel`, 'POST'),

@@ -2,12 +2,13 @@
 import json
 import time
 from datetime import UTC, timedelta
+from uuid import uuid4
 
 from sqlalchemy import case, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal
-from app.models import Approval, Execution, PlanStep, Task, utc_now
+from app.models import Approval, Execution, PlanStep, Task, WorkerHeartbeat, utc_now
 from app.state import transition
 from app.tasks import record_event
 from app.tool_policy import ToolDenied, approval_scope, validate_invocation
@@ -129,8 +130,16 @@ def run_once(db: Session) -> bool:
 
 
 def main() -> None:
+    worker_id = str(uuid4())
     while True:
         with SessionLocal() as db:
+            heartbeat = db.get(WorkerHeartbeat, worker_id)
+            if heartbeat is None:
+                heartbeat = WorkerHeartbeat(id=worker_id, started_at=utc_now(), last_seen_at=utc_now())
+                db.add(heartbeat)
+            else:
+                heartbeat.last_seen_at = utc_now()
+            db.commit()
             worked = run_once(db)
         if not worked:
             time.sleep(1)

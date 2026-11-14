@@ -1,13 +1,17 @@
+from datetime import UTC, timedelta
+from typing import Annotated
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import func, select, text
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.db import engine
+from app.db import engine, get_db
+from app.models import WorkerHeartbeat, utc_now
 from app.ollama import model_status
 from app.operations import router as operations_router
 from app.tasks import router as tasks_router
@@ -68,3 +72,13 @@ def ready() -> Health:
 def local_model_status() -> dict:
     settings = get_settings()
     return model_status(settings.ollama_endpoint, settings.ollama_model)
+
+
+@app.get("/api/v1/worker/status")
+def worker_status(db: Annotated[Session, Depends(get_db)]) -> dict:
+    cutoff = utc_now() - timedelta(seconds=10)
+    active = db.scalar(select(func.count()).select_from(WorkerHeartbeat).where(WorkerHeartbeat.last_seen_at >= cutoff)) or 0
+    latest = db.scalar(select(WorkerHeartbeat.last_seen_at).order_by(WorkerHeartbeat.last_seen_at.desc()).limit(1))
+    if latest is not None and latest.tzinfo is None:
+        latest = latest.replace(tzinfo=UTC)
+    return {"active": active > 0, "active_count": active, "last_seen_at": latest}
