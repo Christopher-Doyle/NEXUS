@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
 from app.contracts import PlanEdit, PlanRequest, StepInput, StepView, TaskCreate, TaskList, TaskView
-from app.db import get_db
+from app.db import begin_write, get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
@@ -188,6 +188,7 @@ def edit_plan(task_id: str, body: PlanEdit, db: DbSession) -> TaskView:
 
 @router.post("/{task_id}/start", response_model=TaskView, status_code=202)
 def start_task(task_id: str, db: DbSession) -> TaskView:
+    begin_write(db)
     task = get_task(db, task_id)
     if task.state != "review_required" or not task.steps:
         raise HTTPException(status_code=409, detail="A reviewed plan is required before starting")
@@ -199,6 +200,7 @@ def start_task(task_id: str, db: DbSession) -> TaskView:
 
 @router.post("/{task_id}/cancel", response_model=TaskView, status_code=202)
 def cancel_task(task_id: str, db: DbSession) -> TaskView:
+    begin_write(db)
     task = get_task(db, task_id)
     try:
         transition(task, "cancelled")
@@ -211,6 +213,7 @@ def cancel_task(task_id: str, db: DbSession) -> TaskView:
 
 @router.post("/{task_id}/pause", response_model=TaskView, status_code=202)
 def pause_task(task_id: str, db: DbSession) -> TaskView:
+    begin_write(db)
     task = get_task(db, task_id)
     try:
         transition(task, "pausing")
@@ -223,6 +226,7 @@ def pause_task(task_id: str, db: DbSession) -> TaskView:
 
 @router.post("/{task_id}/resume", response_model=TaskView, status_code=202)
 def resume_task(task_id: str, db: DbSession) -> TaskView:
+    begin_write(db)
     task = get_task(db, task_id)
     try:
         transition(task, "queued")

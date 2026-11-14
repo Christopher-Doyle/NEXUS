@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.contracts import ApprovalDecision, ApprovalView
-from app.db import SessionLocal, get_db
+from app.db import SessionLocal, begin_write, get_db
 from app.models import Approval, Artifact, Event, PlanStep, Task, utc_now
 from app.state import transition
 from app.tasks import record_event
@@ -38,6 +38,7 @@ def list_approvals(db: DbSession) -> list[ApprovalView]:
 
 @router.post("/approvals/{approval_id}/decision", response_model=ApprovalView)
 def decide_approval(approval_id: str, body: ApprovalDecision, db: DbSession) -> ApprovalView:
+    begin_write(db)
     approval = db.get(Approval, approval_id)
     if approval is None:
         raise HTTPException(status_code=404, detail="Approval not found")

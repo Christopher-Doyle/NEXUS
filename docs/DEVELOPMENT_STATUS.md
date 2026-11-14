@@ -35,8 +35,8 @@ number does not imply a 60% complete release or passing security gates.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
   per task. There is no bounded
-  task wall-clock timeout. Pause/cancel during reads were tested; writes remain
-  a race to review.
+  task wall-clock timeout. Pause/cancel during reads and cancellation at the
+  report write boundary are covered by tests.
 - The primary approved and rejected workflows passed a local browser smoke
   test. Accessibility, a clean-clone demo and real Ollama remain unverified.
 - Error handling and logging need a full security review. There is no rate
@@ -47,7 +47,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 26 backend tests passed, one symlink test skipped on
+- `python -m pytest -q`: 28 backend tests passed, one symlink test skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -61,17 +61,20 @@ number does not imply a 60% complete release or passing security gates.
   SSE test: `Last-Event-ID` replays the next event. Pause and cancel during
   an active read leave later steps pending. Local search tests cover scope,
   typed arguments and result bounds.
+- Report cancellation race tests: a cancellation committed before the write
+  boundary prevents output; a cancellation during a locked write waits and
+  receives a conflict after the task completes.
 - Artifact directory symlink redirection is rejected in code. The real symlink
   test is skipped locally because directory symlinks are unavailable here;
   Linux CI will exercise it.
 
-Remote CI passed for artifact path hardening (`d333fd7`). A
+Remote CI passed for the two-process worker test (`d6e2c01`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `d333fd7` (artifact path
-hardening). Multi-process worker test: commit and push pending.
+Latest pushed commit before this checkpoint: `d6e2c01` (two-process worker
+test). Report cancellation serialization: commit and push pending.
 
 ## Known risks
 
@@ -83,6 +86,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the two-process worker test. Then review write cancellation
-behavior and complete the
-remaining P0 acceptance checks.
+Commit and push report cancellation serialization. Then complete the
+remaining P0 acceptance checks, especially full tool metadata, retention
+controls, security review and reproducible browser tests.

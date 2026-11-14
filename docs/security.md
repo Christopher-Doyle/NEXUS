@@ -17,6 +17,10 @@ Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file
 and records its SHA-256 digest. Artifact directories reject symlink redirection.
 Downloads recheck the artifact path and digest.
+The worker acquires a SQLite write lock before the final report action and
+rechecks task state and approval. A cancellation acknowledged before that
+boundary prevents the write; a cancellation requested during the write waits
+for the result and returns a conflict if the task has completed.
 After an uncertain interrupted write, the worker marks the step for review
 instead of repeating it. A separate worker process should be run only once
 until cross-process leasing is implemented.

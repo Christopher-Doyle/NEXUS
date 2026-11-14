@@ -9,9 +9,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db import Base, get_db, make_engine
+from app.db import Base, begin_write, get_db, make_engine
 from app.main import app
-from app.models import Execution, PlanStep, Task, utc_now
+from app.models import Approval, Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
 from app.tool_policy import ToolDenied, approval_scope, workspace_file
@@ -230,6 +230,112 @@ def test_pause_or_cancel_during_read_stops_following_step(tmp_path, monkeypatch,
             assert db.get(Task, task.id).state == final_state
             assert [step.state for step in db.query(PlanStep).filter_by(task_id=task.id).order_by(PlanStep.ordinal)] == ["completed", "pending"]
             assert not run_once(db)
+    finally:
+        release.set()
+        app.dependency_overrides.clear()
+        engine.dispose()
+
+
+def test_cancel_during_report_write_waits_for_committed_result(tmp_path, monkeypatch) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'write-race.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        task = Task(goal="Write approved report", state="running", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["write_report"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        step = PlanStep(task_id=task.id, ordinal=1, description="Write report", tool_name="write_report", args_json='{"filename":"report.md"}', args_hash=args_hash({"filename": "report.md"}), risk_level="high", state="pending")
+        db.add(step)
+        db.flush()
+        db.add(Approval(step_id=step.id, scope_hash=approval_scope(task, step), requested_action="Write report", decision="approved", expires_at=utc_now() + timedelta(minutes=1)))
+        db.commit()
+    entered = Event()
+    release = Event()
+
+    def slow_write(_db, _task, _step):
+        entered.set()
+        assert release.wait(timeout=5)
+        return {"sha256": "a" * 64}
+
+    monkeypatch.setattr("app.worker.run_tool", slow_write)
+
+    def test_db() -> Generator[Session, None, None]:
+        with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = test_db
+    try:
+        def worker_try() -> bool:
+            with factory() as db:
+                return run_once(db)
+
+        client = TestClient(app, base_url="http://127.0.0.1:8765")
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            worker_future = pool.submit(worker_try)
+            assert entered.wait(timeout=5)
+            cancel_future = pool.submit(lambda: client.post(f"/api/v1/tasks/{task.id}/cancel", headers={"x-nexus-intent": "local"}))
+            time.sleep(0.1)
+            assert not cancel_future.done()
+            release.set()
+            assert worker_future.result(timeout=5)
+            assert cancel_future.result(timeout=5).status_code == 409
+        with factory() as db:
+            assert db.get(Task, task.id).state == "completed"
+    finally:
+        release.set()
+        app.dependency_overrides.clear()
+        engine.dispose()
+
+
+def test_cancel_before_report_write_boundary_prevents_output(tmp_path, monkeypatch) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'prewrite-cancel.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        task = Task(goal="Cancel report", state="running", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["write_report"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        step = PlanStep(task_id=task.id, ordinal=1, description="Write report", tool_name="write_report", args_json='{"filename":"report.md"}', args_hash=args_hash({"filename": "report.md"}), risk_level="high", state="pending")
+        db.add(step)
+        db.flush()
+        db.add(Approval(step_id=step.id, scope_hash=approval_scope(task, step), requested_action="Write report", decision="approved", expires_at=utc_now() + timedelta(minutes=1)))
+        db.commit()
+    entered = Event()
+    release = Event()
+    calls = 0
+
+    def gated_write(db):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            entered.set()
+            assert release.wait(timeout=5)
+        begin_write(db)
+
+    monkeypatch.setattr("app.worker.begin_write", gated_write)
+    monkeypatch.setattr("app.worker.run_tool", lambda *_: pytest.fail("Cancelled write was executed"))
+
+    def test_db() -> Generator[Session, None, None]:
+        with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = test_db
+    try:
+        def worker_try() -> bool:
+            with factory() as db:
+                return run_once(db)
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(worker_try)
+            assert entered.wait(timeout=5)
+            client = TestClient(app, base_url="http://127.0.0.1:8765")
+            assert client.post(f"/api/v1/tasks/{task.id}/cancel", headers={"x-nexus-intent": "local"}).status_code == 202
+            release.set()
+            assert future.result(timeout=5)
+        with factory() as db:
+            assert db.get(Task, task.id).state == "cancelled"
+            assert db.get(PlanStep, step.id).state == "cancelled"
+            assert db.query(Execution).filter_by(step_id=step.id).one().status == "cancelled"
     finally:
         release.set()
         app.dependency_overrides.clear()

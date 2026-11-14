@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import case, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db import SessionLocal
+from app.db import SessionLocal, begin_write
 from app.models import Approval, Execution, PlanStep, Task, WorkerHeartbeat, utc_now
 from app.state import transition
 from app.tasks import record_event
@@ -16,8 +16,7 @@ from app.tool_runner import run_tool
 
 
 def run_once(db: Session) -> bool:
-    if db.bind is not None and db.bind.dialect.name == "sqlite":
-        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    begin_write(db)
     task = db.scalar(select(Task).options(selectinload(Task.steps)).where(Task.state.in_(["queued", "running", "pausing"])).order_by(case((Task.state == "pausing", 0), (Task.state == "queued", 1), else_=2), Task.created_at, Task.id))
     if task is None:
         db.commit()
@@ -95,6 +94,36 @@ def run_once(db: Session) -> bool:
         db.add(execution)
         step.state = "running"
         db.commit()
+    if step.tool_name == "write_report":
+        begin_write(db)
+        db.refresh(task)
+        if task.state == "cancelled":
+            step.state = "cancelled"
+            execution.status = "cancelled"
+            execution.ended_at = utc_now()
+            record_event(db, task.id, "step_cancelled", {"step_id": step.id})
+            db.commit()
+            return True
+        if task.state == "pausing":
+            step.state = "pending"
+            db.delete(execution)
+            transition(task, "paused")
+            record_event(db, task.id, "task_state", {"state": task.state})
+            db.commit()
+            return True
+        scope = approval_scope(task, step)
+        approval = db.scalar(select(Approval).where(Approval.step_id == step.id, Approval.scope_hash == scope, Approval.decision == "approved").order_by(Approval.created_at.desc()))
+        expiry = approval.expires_at.replace(tzinfo=UTC) if approval and approval.expires_at and approval.expires_at.tzinfo is None else approval.expires_at if approval else None
+        if task.state != "running" or approval is None or (expiry is not None and expiry <= utc_now()):
+            step.state = "failed"
+            execution.status = "failed"
+            execution.error_code = "ApprovalInvalid"
+            execution.ended_at = utc_now()
+            if task.state == "running":
+                transition(task, "failed")
+            record_event(db, task.id, "tool_denied", {"step_id": step.id, "error": "Approval is no longer valid"})
+            db.commit()
+            return True
     try:
         result = run_tool(db, task, step)
         execution.result_json = json.dumps(result)

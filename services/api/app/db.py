@@ -29,3 +29,9 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 def get_db() -> Generator[Session, None, None]:
     with SessionLocal() as session:
         yield session
+
+
+def begin_write(db: Session) -> None:
+    """Serialize a state decision with other SQLite writers before reading."""
+    if db.bind is not None and db.bind.dialect.name == "sqlite":
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
