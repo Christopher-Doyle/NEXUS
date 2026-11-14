@@ -18,6 +18,21 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
         path = workspace_file(task.workspace_path, args["path"])
         content = path.read_text(encoding="utf-8")
         return {"source": path.name, "content": content, "sha256": hashlib.sha256(content.encode()).hexdigest()}
+    if step.tool_name == "search_local_docs":
+        if not task.workspace_path:
+            raise ToolDenied("No workspace is configured for this task")
+        query = args["query"].strip()
+        if len(query) < 2:
+            raise ToolDenied("Search query is too short")
+        matches = []
+        for name in json.loads(task.input_files_json)[:5]:
+            path = workspace_file(task.workspace_path, name)
+            for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+                if query.casefold() in line.casefold():
+                    matches.append({"source": name, "line": line_number, "excerpt": line[:200]})
+                    if len(matches) == 20:
+                        return {"query": query, "matches": matches, "truncated": True}
+        return {"query": query, "matches": matches, "truncated": False}
     if step.tool_name == "write_report":
         if not task.workspace_path:
             raise ToolDenied("No workspace is configured for this task")

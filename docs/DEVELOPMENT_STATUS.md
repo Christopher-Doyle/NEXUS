@@ -18,8 +18,8 @@ number does not imply a 60% complete release or passing security gates.
   folder; deterministic plan generation, editing, version checks and state transitions.
 - Optional Ollama planning with structured JSON, local endpoint restriction,
   bounded timeouts, one repair attempt and availability check.
-- Separate worker process with two registered tools: bounded text read and
-  approval-gated Markdown report write.
+- Separate worker process with three allowlisted tools: bounded text read,
+  bounded search of selected local files, and approval-gated Markdown report write.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
 - Worker heartbeat with a 10-second liveness window and dashboard status.
@@ -30,12 +30,13 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Incomplete
 
-- No outbound network fetch tool, search tool, general document parsers or
+- No outbound network fetch tool, general document parsers or
   settings UI. Network access remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Simultaneous worker calls passed a threaded SQLite test, but multi-process
   concurrency is not yet stress-tested. There is no bounded
-  task wall-clock timeout and pause/cancel race coverage remains limited.
+  task wall-clock timeout. Pause/cancel during reads were tested; writes remain
+  a race to review.
 - The primary approved and rejected workflows passed a local browser smoke
   test. Accessibility, a clean-clone demo and real Ollama remain unverified.
 - Error handling and logging need a full security review. There is no rate
@@ -46,7 +47,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 21 backend tests passed, one dependency deprecation warning.
+- `python -m pytest -q`: 25 backend tests passed, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: two frontend API tests passed.
@@ -55,15 +56,17 @@ number does not imply a 60% complete release or passing security gates.
   persisted history after API restart, and rejection with no artifact passed.
   Four synthetic screenshots were captured and visually inspected.
 - Threaded worker claim test: one read execution across simultaneous calls.
-  SSE test: `Last-Event-ID` replays the next event.
+  SSE test: `Last-Event-ID` replays the next event. Pause and cancel during
+  an active read leave later steps pending. Local search tests cover scope,
+  typed arguments and result bounds.
 
-Remote CI passed for the worker heartbeat changes (`33121d8`). A
+Remote CI passed for the artifact library changes (`3a4a27e`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `33121d8` (worker heartbeat).
-Artifact library and reliability tests: commit and push pending.
+Latest pushed commit before this checkpoint: `3a4a27e` (artifact library and
+reliability tests). Local search and pause/cancel tests: commit and push pending.
 
 ## Known risks
 
@@ -75,6 +78,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the artifact library and reliability tests. Then stress-test
-multi-process workers, review pause/cancel races and complete the remaining
-P0 acceptance checks.
+Commit and push local search with pause/cancel tests. Then stress-test
+multi-process workers, review write cancellation behavior and complete the
+remaining P0 acceptance checks.

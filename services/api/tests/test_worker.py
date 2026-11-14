@@ -2,7 +2,7 @@ import time
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from threading import Barrier, Lock
+from threading import Barrier, Event, Lock
 from types import SimpleNamespace
 
 import pytest
@@ -165,3 +165,53 @@ def test_simultaneous_workers_do_not_repeat_a_leased_read(tmp_path, monkeypatch)
         assert db.get(Task, task.id).state == "completed"
         assert db.get(PlanStep, step.id).state == "completed"
     engine.dispose()
+
+
+@pytest.mark.parametrize(("action", "final_state"), [("pause", "paused"), ("cancel", "cancelled")])
+def test_pause_or_cancel_during_read_stops_following_step(tmp_path, monkeypatch, action, final_state) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / f'{action}.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        task = Task(goal="Read two files", state="running", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file"]', input_files_json='["brief.md","meeting.md"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        for ordinal, path in enumerate(["brief.md", "meeting.md"], start=1):
+            db.add(PlanStep(task_id=task.id, ordinal=ordinal, description=f"Read {path}", tool_name="read_file", args_json=f'{{"path":"{path}"}}', args_hash=args_hash({"path": path}), risk_level="low", state="pending"))
+        db.commit()
+    entered = Event()
+    release = Event()
+
+    def slow_tool(_db, _task, _step):
+        entered.set()
+        assert release.wait(timeout=5)
+        return {"bytes": 1}
+
+    monkeypatch.setattr("app.worker.run_tool", slow_tool)
+
+    def test_db() -> Generator[Session, None, None]:
+        with factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db] = test_db
+    try:
+        def worker_try() -> bool:
+            with factory() as db:
+                return run_once(db)
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(worker_try)
+            assert entered.wait(timeout=5)
+            client = TestClient(app, base_url="http://127.0.0.1:8765")
+            response = client.post(f"/api/v1/tasks/{task.id}/{action}", headers={"x-nexus-intent": "local"})
+            assert response.status_code == 202
+            release.set()
+            assert future.result(timeout=5)
+        with factory() as db:
+            assert db.get(Task, task.id).state == final_state
+            assert [step.state for step in db.query(PlanStep).filter_by(task_id=task.id).order_by(PlanStep.ordinal)] == ["completed", "pending"]
+            assert not run_once(db)
+    finally:
+        release.set()
+        app.dependency_overrides.clear()
+        engine.dispose()

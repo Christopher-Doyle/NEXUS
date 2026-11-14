@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-Capability = Literal["read_file", "write_report"]
+Capability = Literal["read_file", "search_local_docs", "write_report"]
 
 
 class InputFile(BaseModel):
@@ -17,7 +17,7 @@ class TaskCreate(BaseModel):
     goal: str = Field(min_length=8, max_length=4000)
     constraints: list[str] = Field(default_factory=list, max_length=12)
     success_criteria: str | None = Field(default=None, max_length=2000)
-    capabilities: list[Capability] = Field(default_factory=lambda: ["read_file", "write_report"], max_length=2)
+    capabilities: list[Capability] = Field(default_factory=lambda: ["read_file", "search_local_docs", "write_report"], max_length=3)
     network_access: bool = False
     workspace_path: str | None = Field(default=None, max_length=500)
     input_files: list[InputFile] = Field(default_factory=list, max_length=5)

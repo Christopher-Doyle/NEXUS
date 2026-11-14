@@ -19,7 +19,12 @@ class WriteReportArgs(BaseModel):
     filename: str = Field(pattern=r"^[a-zA-Z0-9_-]+\.md$", max_length=100)
 
 
-ARG_SCHEMAS = {"read_file": ReadFileArgs, "write_report": WriteReportArgs}
+class SearchLocalDocsArgs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    query: str = Field(min_length=2, max_length=120)
+
+
+ARG_SCHEMAS = {"read_file": ReadFileArgs, "search_local_docs": SearchLocalDocsArgs, "write_report": WriteReportArgs}
 
 
 def safe_relative_path(value: str) -> bool:
