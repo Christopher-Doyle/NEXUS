@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import UTC
 from itertools import islice
 from pathlib import Path
 from typing import Annotated
@@ -35,8 +36,8 @@ def task_view(task: Task) -> TaskView:
         input_files=json.loads(task.input_files_json),
         state=task.state,
         plan_version=task.plan_version,
-        created_at=task.created_at,
-        updated_at=task.updated_at,
+        created_at=task.created_at.replace(tzinfo=UTC) if task.created_at.tzinfo is None else task.created_at,
+        updated_at=task.updated_at.replace(tzinfo=UTC) if task.updated_at.tzinfo is None else task.updated_at,
         steps=[StepView(
             id=step.id, ordinal=step.ordinal, description=step.description,
             tool_name=step.tool_name, args=json.loads(step.args_json), args_hash=step.args_hash,

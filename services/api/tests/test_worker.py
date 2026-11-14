@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, get_db, make_engine
 from app.main import app
-from app.models import Execution, PlanStep, Task
+from app.models import Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
 from app.tool_policy import ToolDenied, approval_scope, workspace_file
@@ -92,7 +93,13 @@ def test_recovery_replays_read_but_stops_uncertain_write(tmp_path) -> None:
         read = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="running")
         db.add(read)
         db.flush()
-        db.add(Execution(step_id=read.id, attempt=1, idempotency_key=approval_scope(task, read), status="running"))
+        db.add(Execution(step_id=read.id, attempt=1, idempotency_key=approval_scope(task, read), status="running", lease_until=utc_now() + timedelta(minutes=1)))
+        db.commit()
+    with factory() as db:
+        assert not run_once(db)
+        assert db.get(PlanStep, read.id).state == "running"
+    with factory() as db:
+        db.query(Execution).filter_by(step_id=read.id).one().lease_until = utc_now() - timedelta(seconds=1)
         db.commit()
     with factory() as db:
         assert run_once(db)
@@ -106,7 +113,7 @@ def test_recovery_replays_read_but_stops_uncertain_write(tmp_path) -> None:
         write = PlanStep(task_id=task.id, ordinal=1, description="Write report", tool_name="write_report", args_json='{"filename":"report.md"}', args_hash=args_hash({"filename": "report.md"}), risk_level="high", state="running")
         db.add(write)
         db.flush()
-        db.add(Execution(step_id=write.id, attempt=1, idempotency_key=approval_scope(task, write), status="running"))
+        db.add(Execution(step_id=write.id, attempt=1, idempotency_key=approval_scope(task, write), status="running", lease_until=utc_now() - timedelta(seconds=1)))
         db.commit()
     with factory() as db:
         assert run_once(db)

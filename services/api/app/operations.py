@@ -22,6 +22,10 @@ router = APIRouter(prefix="/api/v1", tags=["operations"])
 DbSession = Annotated[Session, Depends(get_db)]
 
 
+def utc_iso(value) -> str:
+    return (value.replace(tzinfo=UTC) if value.tzinfo is None else value).isoformat()
+
+
 def approval_view(approval: Approval, task_id: str) -> ApprovalView:
     return ApprovalView(id=approval.id, task_id=task_id, step_id=approval.step_id, scope_hash=approval.scope_hash, requested_action=approval.requested_action, decision=approval.decision, expires_at=approval.expires_at)
 
@@ -73,7 +77,7 @@ def task_events(task_id: str, db: DbSession, after: int = 0, last_event_id: Anno
                 rows = session.scalars(select(Event).where(Event.task_id == task_id, Event.seq > cursor).order_by(Event.seq).limit(100)).all()
             for event in rows:
                 cursor = event.seq
-                payload = {"id": event.seq, "type": event.kind, "occurred_at": event.created_at.isoformat(), "resource_id": task_id, "payload": json.loads(event.payload_json)}
+                payload = {"id": event.seq, "type": event.kind, "occurred_at": utc_iso(event.created_at), "resource_id": task_id, "payload": json.loads(event.payload_json)}
                 yield f"id: {event.seq}\nevent: update\ndata: {json.dumps(payload)}\n\n"
             if not rows:
                 yield ": keepalive\n\n"
@@ -87,7 +91,7 @@ def task_journal(task_id: str, db: DbSession) -> list[dict]:
     if db.get(Task, task_id) is None:
         raise HTTPException(status_code=404, detail="Task not found")
     rows = db.scalars(select(Event).where(Event.task_id == task_id).order_by(Event.seq).limit(500)).all()
-    return [{"id": event.seq, "type": event.kind, "occurred_at": event.created_at, "payload": json.loads(event.payload_json)} for event in rows]
+    return [{"id": event.seq, "type": event.kind, "occurred_at": utc_iso(event.created_at), "payload": json.loads(event.payload_json)} for event in rows]
 
 
 @router.get("/tasks/{task_id}/artifacts")
@@ -95,7 +99,7 @@ def task_artifacts(task_id: str, db: DbSession) -> list[dict]:
     if db.get(Task, task_id) is None:
         raise HTTPException(status_code=404, detail="Task not found")
     rows = db.scalars(select(Artifact).where(Artifact.task_id == task_id).order_by(Artifact.created_at)).all()
-    return [{"id": item.id, "filename": Path(item.safe_path).name, "sha256": item.sha256, "size_bytes": item.size_bytes, "media_type": item.media_type, "created_at": item.created_at} for item in rows]
+    return [{"id": item.id, "filename": Path(item.safe_path).name, "sha256": item.sha256, "size_bytes": item.size_bytes, "media_type": item.media_type, "created_at": utc_iso(item.created_at)} for item in rows]
 
 
 @router.get("/artifacts/{artifact_id}")

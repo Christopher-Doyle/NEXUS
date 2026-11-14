@@ -3,7 +3,7 @@ import json
 import time
 from datetime import UTC, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal
@@ -15,8 +15,11 @@ from app.tool_runner import run_tool
 
 
 def run_once(db: Session) -> bool:
-    task = db.scalar(select(Task).options(selectinload(Task.steps)).where(Task.state.in_(["queued", "running", "pausing"])).order_by(Task.created_at, Task.id))
+    if db.bind is not None and db.bind.dialect.name == "sqlite":
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    task = db.scalar(select(Task).options(selectinload(Task.steps)).where(Task.state.in_(["queued", "running", "pausing"])).order_by(case((Task.state == "pausing", 0), (Task.state == "queued", 1), else_=2), Task.created_at, Task.id))
     if task is None:
+        db.commit()
         return False
     if task.state == "pausing":
         transition(task, "paused")
@@ -26,7 +29,6 @@ def run_once(db: Session) -> bool:
     if task.state == "queued":
         transition(task, "running")
         record_event(db, task.id, "task_state", {"state": task.state})
-        db.commit()
     steps = sorted(task.steps, key=lambda item: item.ordinal)
     if all(step.state == "completed" for step in steps):
         transition(task, "completed")
@@ -35,6 +37,7 @@ def run_once(db: Session) -> bool:
         return True
     step = next((item for item in steps if item.state in {"pending", "running"} and all(steps[number - 1].state == "completed" for number in json.loads(item.dependencies_json))), None)
     if step is None:
+        db.commit()
         return False
     try:
         validate_invocation(task, step)
@@ -46,6 +49,10 @@ def run_once(db: Session) -> bool:
         return True
     execution = db.scalar(select(Execution).where(Execution.step_id == step.id))
     if step.state == "running" and execution is not None:
+        lease = execution.lease_until.replace(tzinfo=UTC) if execution.lease_until and execution.lease_until.tzinfo is None else execution.lease_until
+        if lease is not None and lease > utc_now():
+            db.commit()
+            return False
         if step.tool_name == "write_report":
             step.state = "needs_review"
             transition(task, "failed")

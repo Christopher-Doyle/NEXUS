@@ -25,6 +25,17 @@ NEXUS is a proposed personal AI operations console: users define an objective, r
 
 > **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads bounded local text files, requests approval before writing a report, and records artifacts and events. This is an early MVP with documented limits, not a finished v1. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md).
 
+### Verified local demo
+
+The screenshots below come from a synthetic two-note workflow run in a local
+browser. An approved write produced a Markdown report; a second run was
+rejected and produced no artifact.
+
+![NEXUS overview](docs/screenshots/overview.png)
+![Editable plan review](docs/screenshots/plan.png)
+![Scoped report approval](docs/screenshots/approval.png)
+![Completed execution and artifact](docs/screenshots/cockpit.png)
+
 ## Design principles
 
 - **Local-first and cost-aware:** development should be possible with free/open-source tooling and without paid API subscriptions.

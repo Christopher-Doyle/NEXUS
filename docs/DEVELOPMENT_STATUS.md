@@ -29,10 +29,11 @@ number does not imply a 60% complete release or passing security gates.
 
 - No outbound network fetch tool, search tool, general document parsers or
   settings UI. Network access remains unused and off in the web client.
-- Worker has a single-process assumption, no cross-process lease claim, no
-  bounded task wall-clock timeout and limited pause/cancel race coverage.
-- SSE reconnect, frontend workflow, accessibility and a clean-clone demo still
-  need browser-level verification. Real Ollama has only mock tests.
+- SQLite scheduling uses an immediate transaction and active step leases.
+  Multi-process concurrency is not yet stress-tested; there is no bounded
+  task wall-clock timeout and pause/cancel race coverage remains limited.
+- The primary approved and rejected workflows passed a local browser smoke
+  test. Accessibility, a clean-clone demo and real Ollama remain unverified.
 - Error handling and logging need a full security review. There is no rate
   limiting, input retention UI or export/delete UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
@@ -46,24 +47,27 @@ number does not imply a 60% complete release or passing security gates.
 - `npm run build`: passed.
 - `npm test`: two frontend API tests passed.
 - `npm audit`: zero vulnerabilities after updating Vitest.
+- Browser smoke test: task creation, plan review, approval, report artifact,
+  persisted history after API restart, and rejection with no artifact passed.
+  Four synthetic screenshots were captured and visually inspected.
 
 Remote CI and a real Ollama invocation have not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `3f89d6b` (Ollama planner).
-Current execution slice: commit and push pending.
+Latest pushed commit before this checkpoint: `65c2b01` (demo execution).
+Current reliability and screenshot changes: commit and push pending.
 
 ## Known risks
 
 Local Host, Origin and explicit intent checks protect mutations in the
-single-owner development setup; they are not remote authentication. A second
-worker process could claim the same task. The worker stops uncertain writes
+single-owner development setup; they are not remote authentication. SQLite
+claims and leases have not been stress-tested across worker processes. The worker stops uncertain writes
 for manual review but has no UI to resolve them. The report quotes local source
 text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the tested demo execution slice. Add a cross-process lease
-claim and test duplicate execution, then run a browser end-to-end demo and
-complete the remaining P0 acceptance checks.
+Commit and push the reliability fixes and verified screenshots. Then test
+concurrent workers and SSE replay, implement task history filters and worker
+status, and complete the remaining P0 acceptance checks.
