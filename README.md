@@ -6,7 +6,7 @@
 
 **AI orchestration · Python · FastAPI · React · TypeScript · Ollama**
 
-![Status](https://img.shields.io/badge/status-planned%20%7C%20Dec%202026-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
+![Status](https://img.shields.io/badge/status-foundation%20in%20development-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
 
 [Overview](#overview) · [Features](#planned-capabilities) · [Architecture](#architecture) · [Data & APIs](#data-model-and-api-contract) · [Roadmap](#roadmap)
 
@@ -23,7 +23,7 @@ NEXUS is a proposed personal AI operations console: users define an objective, r
 
 ## Project status
 
-> **Planned · December 2026** — This repository currently contains the product blueprint and planned implementation. Features, security controls, APIs, tests, and performance targets described below are **design goals, not claims of implemented functionality**. Demo links, screenshots and benchmarks will be added only after verification.
+> **Foundation in development** — The repository now includes a runnable API health service, initial database migration, and React dashboard shell. Task planning and execution remain design goals. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md) for verified progress.
 
 ## Design principles
 
