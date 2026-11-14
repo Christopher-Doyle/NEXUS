@@ -1,6 +1,9 @@
 export type Step = { id: string; ordinal: number; description: string; tool_name: 'read_file' | 'write_report'; args: { path?: string; filename?: string }; args_hash: string; risk_level: string; state: string; dependencies: number[] }
-export type Task = { id: string; goal: string; constraints: string[]; success_criteria: string | null; capabilities: string[]; network_access: boolean; state: string; plan_version: number; created_at: string; updated_at: string; steps: Step[] }
-export type TaskDraft = { goal: string; constraints: string[]; success_criteria: string | null; capabilities: ('read_file' | 'write_report')[]; network_access: boolean }
+export type Task = { id: string; goal: string; constraints: string[]; success_criteria: string | null; capabilities: string[]; network_access: boolean; workspace_path: string | null; input_files: string[]; state: string; plan_version: number; created_at: string; updated_at: string; steps: Step[] }
+export type TaskDraft = { goal: string; constraints: string[]; success_criteria: string | null; capabilities: ('read_file' | 'write_report')[]; network_access: boolean; workspace_path: string | null; input_files: { name: string; content: string }[] }
+export type Approval = { id: string; task_id: string; step_id: string; scope_hash: string; requested_action: string; decision: string; expires_at: string | null }
+export type JournalEvent = { id: number; type: string; occurred_at: string; payload: Record<string, unknown> }
+export type Artifact = { id: string; filename: string; sha256: string; size_bytes: number; media_type: string; created_at: string }
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-Nexus-Intent': 'local' }, body: body === undefined ? undefined : JSON.stringify(body) })
@@ -19,4 +22,12 @@ export const api = {
   planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),
   modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
   editPlan: (task: Task, steps: Step[]) => request<Task>(`/tasks/${task.id}/steps`, 'PATCH', { plan_version: task.plan_version, steps: steps.map(({ description, tool_name, args, dependencies }) => ({ description, tool_name, args, dependencies })) }),
+  startTask: (id: string) => request<Task>(`/tasks/${id}/start`, 'POST'),
+  cancelTask: (id: string) => request<Task>(`/tasks/${id}/cancel`, 'POST'),
+  pauseTask: (id: string) => request<Task>(`/tasks/${id}/pause`, 'POST'),
+  resumeTask: (id: string) => request<Task>(`/tasks/${id}/resume`, 'POST'),
+  approvals: () => request<Approval[]>('/approvals'),
+  decide: (approval: Approval, decision: 'approved' | 'rejected') => request<Approval>(`/approvals/${approval.id}/decision`, 'POST', { decision, scope_hash: approval.scope_hash }),
+  journal: (id: string) => request<JournalEvent[]>(`/tasks/${id}/journal`),
+  artifacts: (id: string) => request<Artifact[]>(`/tasks/${id}/artifacts`),
 }

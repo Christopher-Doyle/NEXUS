@@ -48,11 +48,12 @@ def validate_steps(steps: list[StepInput], capabilities: list[str]) -> list[Step
     return validated
 
 
-def demo_plan(capabilities: list[str]) -> list[StepInput]:
+def demo_plan(capabilities: list[str], files: list[str] | None = None) -> list[StepInput]:
     if "read_file" not in capabilities or "write_report" not in capabilities:
         raise ValueError("The demo plan requires read_file and write_report capabilities")
-    return [
-        StepInput(description="Read the sample project brief", tool_name="read_file", args={"path": "brief.md"}),
-        StepInput(description="Read the sample meeting notes", tool_name="read_file", args={"path": "meeting.md"}),
-        StepInput(description="Write a sourced Markdown report", tool_name="write_report", args={"filename": "project-report.md"}, dependencies=[1, 2]),
-    ]
+    sources = files if files is not None else ["brief.md", "meeting.md"]
+    if not 1 <= len(sources) <= 5:
+        raise ValueError("The demo plan requires 1 to 5 text files")
+    steps = [StepInput(description=f"Read {name}", tool_name="read_file", args={"path": name}) for name in sources]
+    steps.append(StepInput(description="Write a sourced Markdown report", tool_name="write_report", args={"filename": "project-report.md"}, dependencies=list(range(1, len(sources) + 1))))
+    return steps

@@ -1,4 +1,7 @@
 import json
+import os
+from itertools import islice
+from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
@@ -9,13 +12,15 @@ from sqlalchemy.orm import Session, selectinload
 from app.config import get_settings
 from app.contracts import PlanEdit, PlanRequest, StepInput, StepView, TaskCreate, TaskList, TaskView
 from app.db import get_db
-from app.models import Approval, Event, PlanStep, Task, utc_now
+from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
 from app.state import transition
+from app.tool_policy import ToolDenied, workspace_file
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 DbSession = Annotated[Session, Depends(get_db)]
+DEMO_WORKSPACE = Path(__file__).resolve().parents[3] / "fixtures" / "demo"
 
 
 def task_view(task: Task) -> TaskView:
@@ -26,6 +31,8 @@ def task_view(task: Task) -> TaskView:
         success_criteria=task.success_criteria,
         capabilities=json.loads(task.capabilities_json),
         network_access=task.network_access,
+        workspace_path=task.workspace_path,
+        input_files=json.loads(task.input_files_json),
         state=task.state,
         plan_version=task.plan_version,
         created_at=task.created_at,
@@ -71,10 +78,45 @@ def replace_steps(db: Session, task: Task, steps: list[StepInput]) -> None:
 
 @router.post("", response_model=TaskView, status_code=201)
 def create_task(body: TaskCreate, db: DbSession) -> TaskView:
+    if body.workspace_path and body.input_files:
+        raise HTTPException(status_code=422, detail="Choose an approved folder or attach files, not both")
+    task_id = new_id()
+    if body.workspace_path:
+        allowed = {os.path.normcase(str(Path(item).resolve())) for item in get_settings().approved_workspaces.split(";") if item.strip()}
+        selected = Path(body.workspace_path).resolve()
+        if os.path.normcase(str(selected)) not in allowed or not selected.is_dir():
+            raise HTTPException(status_code=403, detail="Folder is not in APPROVED_WORKSPACES")
+        entries = list(islice(selected.iterdir(), 101))
+        if len(entries) > 100:
+            raise HTTPException(status_code=422, detail="Folder contains too many top-level entries")
+        files = sorted(item.name for item in entries if item.is_file() and item.suffix.lower() in {".md", ".txt"})[:5]
+        if not files:
+            raise HTTPException(status_code=422, detail="Folder has no Markdown or text files")
+        try:
+            for name in files:
+                workspace_file(str(selected), name)
+        except (ToolDenied, OSError) as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        workspace = selected
+    elif body.input_files:
+        files = [item.name for item in body.input_files]
+        if len(set(files)) != len(files) or any(len(item.content.encode("utf-8")) > 65536 for item in body.input_files):
+            raise HTTPException(status_code=422, detail="Input files must have unique names and be at most 64 KiB each")
+        workspace = Path(get_settings().data_dir).resolve() / "workspaces" / task_id
+        workspace.mkdir(parents=True, exist_ok=False)
+        try:
+            for item in body.input_files:
+                (workspace / item.name).write_text(item.content, encoding="utf-8")
+        except OSError as exc:
+            raise HTTPException(status_code=500, detail="Could not store task inputs") from exc
+    else:
+        workspace = DEMO_WORKSPACE
+        files = ["brief.md", "meeting.md"]
     task = Task(
+        id=task_id,
         goal=body.goal, constraints_json=json.dumps(body.constraints),
         success_criteria=body.success_criteria, capabilities_json=json.dumps(body.capabilities),
-        network_access=body.network_access, state="draft",
+        network_access=body.network_access, workspace_path=str(workspace), input_files_json=json.dumps(files), state="draft",
     )
     db.add(task)
     db.flush()
@@ -108,7 +150,7 @@ def plan_task(task_id: str, db: DbSession, body: PlanRequest | None = None) -> T
             settings = get_settings()
             steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, settings.ollama_model)
         else:
-            steps = validate_steps(demo_plan(capabilities), capabilities)
+            steps = validate_steps(demo_plan(capabilities, json.loads(task.input_files_json)), capabilities)
     except ModelUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ModelPlanInvalid as exc:
@@ -133,5 +175,52 @@ def edit_plan(task_id: str, body: PlanEdit, db: DbSession) -> TaskView:
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     replace_steps(db, task, steps)
+    db.commit()
+    return task_view(task)
+
+
+@router.post("/{task_id}/start", response_model=TaskView, status_code=202)
+def start_task(task_id: str, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    if task.state != "review_required" or not task.steps:
+        raise HTTPException(status_code=409, detail="A reviewed plan is required before starting")
+    transition(task, "queued")
+    record_event(db, task.id, "task_state", {"state": task.state})
+    db.commit()
+    return task_view(task)
+
+
+@router.post("/{task_id}/cancel", response_model=TaskView, status_code=202)
+def cancel_task(task_id: str, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    try:
+        transition(task, "cancelled")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    record_event(db, task.id, "task_state", {"state": task.state})
+    db.commit()
+    return task_view(task)
+
+
+@router.post("/{task_id}/pause", response_model=TaskView, status_code=202)
+def pause_task(task_id: str, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    try:
+        transition(task, "pausing")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    record_event(db, task.id, "task_state", {"state": task.state})
+    db.commit()
+    return task_view(task)
+
+
+@router.post("/{task_id}/resume", response_model=TaskView, status_code=202)
+def resume_task(task_id: str, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    try:
+        transition(task, "queued")
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    record_event(db, task.id, "task_state", {"state": task.state})
     db.commit()
     return task_view(task)

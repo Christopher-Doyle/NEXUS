@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ollama_endpoint: str = "http://127.0.0.1:11434"
     ollama_model: str = ""
     data_dir: str = "./data"
+    approved_workspaces: str = ""
 
 
 @lru_cache

@@ -15,8 +15,19 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
 | GET | `/api/v1/model/status` | Check configured local Ollama model |
+| POST | `/api/v1/tasks/{id}/start` | Queue a reviewed plan |
+| POST | `/api/v1/tasks/{id}/pause` | Pause after the current step |
+| POST | `/api/v1/tasks/{id}/resume` | Resume a paused task |
+| POST | `/api/v1/tasks/{id}/cancel` | Cancel an active task |
+| GET | `/api/v1/tasks/{id}/events` | SSE event stream with cursor replay |
+| GET | `/api/v1/tasks/{id}/journal` | Bounded event history |
+| GET | `/api/v1/tasks/{id}/artifacts` | Artifact metadata |
+| GET | `/api/v1/approvals` | Pending approvals |
+| POST | `/api/v1/approvals/{id}/decision` | Decide an exact approval scope |
+| GET | `/api/v1/artifacts/{id}` | Verified artifact download |
 
 OpenAPI is available at `/docs` while the API runs. `POST /plan` accepts
 `{"mode":"demo"}` or `{"mode":"ollama"}`. Ollama requires `OLLAMA_MODEL` in
-the environment; no model is downloaded automatically. Task execution, approval, events, and
-artifacts are not yet exposed.
+the environment; no model is downloaded automatically. The worker must run in
+a separate process for queued tasks to progress. API responses include a
+correlation ID for HTTP and validation errors.

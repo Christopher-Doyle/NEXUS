@@ -23,7 +23,7 @@ NEXUS is a proposed personal AI operations console: users define an objective, r
 
 ## Project status
 
-> **Task planning in development** — The API persists tasks and reviewable deterministic demo plans, with an editable plan screen. Tool execution is not yet available. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md) for verified progress.
+> **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads bounded local text files, requests approval before writing a report, and records artifacts and events. This is an early MVP with documented limits, not a finished v1. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md).
 
 ## Design principles
 

@@ -24,6 +24,7 @@ class Task(Base):
     network_access: Mapped[bool] = mapped_column(default=False)
     success_criteria: Mapped[str | None] = mapped_column(Text)
     workspace_path: Mapped[str | None] = mapped_column(Text)
+    input_files_json: Mapped[str] = mapped_column(Text, default="[]")
     state: Mapped[str] = mapped_column(String(32), default="draft", index=True)
     plan_version: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
