@@ -4,6 +4,7 @@ export type TaskDraft = { goal: string; constraints: string[]; success_criteria:
 export type Approval = { id: string; task_id: string; step_id: string; scope_hash: string; requested_action: string; decision: string; expires_at: string | null }
 export type JournalEvent = { id: number; type: string; occurred_at: string; payload: Record<string, unknown> }
 export type Artifact = { id: string; filename: string; sha256: string; size_bytes: number; media_type: string; created_at: string }
+export type ArtifactRecord = Artifact & { task_id: string; task_goal: string }
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-Nexus-Intent': 'local' }, body: body === undefined ? undefined : JSON.stringify(body) })
@@ -37,4 +38,5 @@ export const api = {
   decide: (approval: Approval, decision: 'approved' | 'rejected') => request<Approval>(`/approvals/${approval.id}/decision`, 'POST', { decision, scope_hash: approval.scope_hash }),
   journal: (id: string) => request<JournalEvent[]>(`/tasks/${id}/journal`),
   artifacts: (id: string) => request<Artifact[]>(`/tasks/${id}/artifacts`),
+  artifactLibrary: (offset = 0) => request<{ items: ArtifactRecord[]; total: number }>(`/artifacts?offset=${offset}`),
 }

@@ -7,7 +7,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -100,6 +100,15 @@ def task_artifacts(task_id: str, db: DbSession) -> list[dict]:
         raise HTTPException(status_code=404, detail="Task not found")
     rows = db.scalars(select(Artifact).where(Artifact.task_id == task_id).order_by(Artifact.created_at)).all()
     return [{"id": item.id, "filename": Path(item.safe_path).name, "sha256": item.sha256, "size_bytes": item.size_bytes, "media_type": item.media_type, "created_at": utc_iso(item.created_at)} for item in rows]
+
+
+@router.get("/artifacts")
+def artifact_library(db: DbSession, limit: int = 20, offset: int = 0) -> dict:
+    if not 1 <= limit <= 100 or offset < 0:
+        raise HTTPException(status_code=422, detail="Invalid pagination")
+    rows = db.execute(select(Artifact, Task.goal).join(Task, Artifact.task_id == Task.id).order_by(Artifact.created_at.desc(), Artifact.id.desc()).limit(limit).offset(offset)).all()
+    total = db.scalar(select(func.count()).select_from(Artifact)) or 0
+    return {"items": [{"id": item.id, "task_id": item.task_id, "task_goal": goal, "filename": Path(item.safe_path).name, "sha256": item.sha256, "size_bytes": item.size_bytes, "media_type": item.media_type, "created_at": utc_iso(item.created_at)} for item, goal in rows], "total": total}
 
 
 @router.get("/artifacts/{artifact_id}")

@@ -23,6 +23,7 @@ authentication scheme.
 | GET | `/api/v1/tasks/{id}/events` | SSE event stream with cursor replay |
 | GET | `/api/v1/tasks/{id}/journal` | Bounded event history |
 | GET | `/api/v1/tasks/{id}/artifacts` | Artifact metadata |
+| GET | `/api/v1/artifacts` | Paginated artifact library |
 | GET | `/api/v1/approvals` | Pending approvals |
 | POST | `/api/v1/approvals/{id}/decision` | Decide an exact approval scope |
 | GET | `/api/v1/artifacts/{id}` | Verified artifact download |

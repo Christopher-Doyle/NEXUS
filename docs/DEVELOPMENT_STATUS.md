@@ -26,13 +26,15 @@ number does not imply a 60% complete release or passing security gates.
 - Dashboard, task composer, plan review, execution cockpit and persisted task
   history with search, status filtering and pagination. The cockpit includes a
   timeline, approval controls, journal and artifact links.
+- Paginated artifact library with links to the source task and verified downloads.
 
 ## Incomplete
 
 - No outbound network fetch tool, search tool, general document parsers or
   settings UI. Network access remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
-  Multi-process concurrency is not yet stress-tested; there is no bounded
+  Simultaneous worker calls passed a threaded SQLite test, but multi-process
+  concurrency is not yet stress-tested. There is no bounded
   task wall-clock timeout and pause/cancel race coverage remains limited.
 - The primary approved and rejected workflows passed a local browser smoke
   test. Accessibility, a clean-clone demo and real Ollama remain unverified.
@@ -44,7 +46,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 19 backend tests passed, one dependency deprecation warning.
+- `python -m pytest -q`: 21 backend tests passed, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: two frontend API tests passed.
@@ -52,14 +54,16 @@ number does not imply a 60% complete release or passing security gates.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
   Four synthetic screenshots were captured and visually inspected.
+- Threaded worker claim test: one read execution across simultaneous calls.
+  SSE test: `Last-Event-ID` replays the next event.
 
-Remote CI passed for the task history changes (`06a2949`). A
+Remote CI passed for the worker heartbeat changes (`33121d8`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `06a2949` (task history).
-Worker heartbeat changes: commit and push pending.
+Latest pushed commit before this checkpoint: `33121d8` (worker heartbeat).
+Artifact library and reliability tests: commit and push pending.
 
 ## Known risks
 
@@ -71,6 +75,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the worker heartbeat. Then test concurrent workers and
-SSE replay, implement artifact browsing, and complete the
-remaining P0 acceptance checks.
+Commit and push the artifact library and reliability tests. Then stress-test
+multi-process workers, review pause/cancel races and complete the remaining
+P0 acceptance checks.

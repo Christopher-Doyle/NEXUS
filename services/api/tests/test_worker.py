@@ -1,5 +1,8 @@
+import time
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from threading import Barrier, Lock
 from types import SimpleNamespace
 
 import pytest
@@ -61,6 +64,9 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert "Atlas" in report.read_text(encoding="utf-8")
         artifacts = client.get(f"/api/v1/tasks/{task_id}/artifacts").json()
         assert len(artifacts) == 1
+        library = client.get("/api/v1/artifacts").json()
+        assert library["total"] == 1
+        assert library["items"][0]["task_id"] == task_id
         assert client.get(f"/api/v1/artifacts/{artifacts[0]['id']}").status_code == 200
         assert any(event["type"] == "step_completed" for event in client.get(f"/api/v1/tasks/{task_id}/journal").json())
         with factory() as db:
@@ -119,4 +125,43 @@ def test_recovery_replays_read_but_stops_uncertain_write(tmp_path) -> None:
         assert run_once(db)
         assert db.get(Task, task.id).state == "failed"
         assert db.get(PlanStep, write.id).state == "needs_review"
+    engine.dispose()
+
+
+def test_simultaneous_workers_do_not_repeat_a_leased_read(tmp_path, monkeypatch) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'concurrent.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        task = Task(goal="Read once", state="queued", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file"]', input_files_json='["brief.md"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        step = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="pending")
+        db.add(step)
+        db.commit()
+    calls = 0
+    lock = Lock()
+    gate = Barrier(2)
+
+    def slow_tool(_db, _task, _step):
+        nonlocal calls
+        with lock:
+            calls += 1
+        time.sleep(0.2)
+        return {"bytes": 1}
+
+    monkeypatch.setattr("app.worker.run_tool", slow_tool)
+
+    def worker_try() -> bool:
+        gate.wait()
+        with factory() as db:
+            return run_once(db)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _: worker_try(), range(2)))
+    assert sorted(results) == [False, True]
+    assert calls == 1
+    with factory() as db:
+        assert db.get(Task, task.id).state == "completed"
+        assert db.get(PlanStep, step.id).state == "completed"
     engine.dispose()
