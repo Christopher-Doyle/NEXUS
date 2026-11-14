@@ -23,7 +23,7 @@ NEXUS is a proposed personal AI operations console: users define an objective, r
 
 ## Project status
 
-> **Foundation in development** — The repository now includes a runnable API health service, initial database migration, and React dashboard shell. Task planning and execution remain design goals. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md) for verified progress.
+> **Task planning in development** — The API persists tasks and reviewable deterministic demo plans, with an editable plan screen. Tool execution is not yet available. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md) for verified progress.
 
 ## Design principles
 

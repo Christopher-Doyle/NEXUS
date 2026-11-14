@@ -20,6 +20,8 @@ class Task(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     goal: Mapped[str] = mapped_column(Text)
     constraints_json: Mapped[str] = mapped_column(Text, default="[]")
+    capabilities_json: Mapped[str] = mapped_column(Text, default="[]")
+    network_access: Mapped[bool] = mapped_column(default=False)
     success_criteria: Mapped[str | None] = mapped_column(Text)
     workspace_path: Mapped[str | None] = mapped_column(Text)
     state: Mapped[str] = mapped_column(String(32), default="draft", index=True)

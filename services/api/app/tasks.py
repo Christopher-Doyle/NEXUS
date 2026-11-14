@@ -1,0 +1,126 @@
+import json
+from typing import Annotated
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, selectinload
+
+from app.contracts import PlanEdit, StepInput, StepView, TaskCreate, TaskList, TaskView
+from app.db import get_db
+from app.models import Approval, Event, PlanStep, Task, utc_now
+from app.planning import args_hash, demo_plan, validate_steps
+from app.state import transition
+
+router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
+DbSession = Annotated[Session, Depends(get_db)]
+
+
+def task_view(task: Task) -> TaskView:
+    return TaskView(
+        id=task.id,
+        goal=task.goal,
+        constraints=json.loads(task.constraints_json),
+        success_criteria=task.success_criteria,
+        capabilities=json.loads(task.capabilities_json),
+        network_access=task.network_access,
+        state=task.state,
+        plan_version=task.plan_version,
+        created_at=task.created_at,
+        updated_at=task.updated_at,
+        steps=[StepView(
+            id=step.id, ordinal=step.ordinal, description=step.description,
+            tool_name=step.tool_name, args=json.loads(step.args_json), args_hash=step.args_hash,
+            risk_level=step.risk_level, state=step.state,
+            dependencies=json.loads(step.dependencies_json),
+        ) for step in sorted(task.steps, key=lambda item: item.ordinal)],
+    )
+
+
+def get_task(db: Session, task_id: str) -> Task:
+    task = db.scalar(select(Task).options(selectinload(Task.steps)).where(Task.id == task_id))
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+
+def record_event(db: Session, task_id: str, kind: str, payload: dict) -> None:
+    db.add(Event(task_id=task_id, kind=kind, payload_json=json.dumps(payload), correlation_id=str(uuid4())))
+
+
+def replace_steps(db: Session, task: Task, steps: list[StepInput]) -> None:
+    old_ids = [step.id for step in task.steps]
+    if old_ids:
+        for approval in db.scalars(select(Approval).where(Approval.step_id.in_(old_ids))):
+            db.delete(approval)
+        for step in task.steps:
+            db.delete(step)
+        db.flush()
+    task.steps = [PlanStep(
+        task_id=task.id, ordinal=index, description=step.description,
+        tool_name=step.tool_name, args_json=json.dumps(step.args, sort_keys=True),
+        args_hash=args_hash(step.args), risk_level="high" if step.tool_name == "write_report" else "low",
+        state="pending", dependencies_json=json.dumps(step.dependencies),
+    ) for index, step in enumerate(steps, start=1)]
+    task.plan_version += 1
+    task.updated_at = utc_now()
+    record_event(db, task.id, "plan_updated", {"plan_version": task.plan_version, "step_count": len(steps)})
+
+
+@router.post("", response_model=TaskView, status_code=201)
+def create_task(body: TaskCreate, db: DbSession) -> TaskView:
+    task = Task(
+        goal=body.goal, constraints_json=json.dumps(body.constraints),
+        success_criteria=body.success_criteria, capabilities_json=json.dumps(body.capabilities),
+        network_access=body.network_access, state="draft",
+    )
+    db.add(task)
+    db.flush()
+    record_event(db, task.id, "task_created", {"state": "draft"})
+    db.commit()
+    return task_view(task)
+
+
+@router.get("", response_model=TaskList)
+def list_tasks(db: DbSession, limit: int = 20, offset: int = 0) -> TaskList:
+    if not 1 <= limit <= 100 or offset < 0:
+        raise HTTPException(status_code=422, detail="Invalid pagination")
+    rows = db.scalars(select(Task).options(selectinload(Task.steps)).order_by(Task.created_at.desc(), Task.id.desc()).limit(limit).offset(offset)).all()
+    total = db.scalar(select(func.count()).select_from(Task)) or 0
+    return TaskList(items=[task_view(task) for task in rows], total=total)
+
+
+@router.get("/{task_id}", response_model=TaskView)
+def read_task(task_id: str, db: DbSession) -> TaskView:
+    return task_view(get_task(db, task_id))
+
+
+@router.post("/{task_id}/plan", response_model=TaskView, status_code=202)
+def plan_task(task_id: str, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    if task.state not in {"draft", "review_required"}:
+        raise HTTPException(status_code=409, detail="Task cannot be planned in its current state")
+    transition(task, "planning")
+    try:
+        steps = validate_steps(demo_plan(json.loads(task.capabilities_json)), json.loads(task.capabilities_json))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    replace_steps(db, task, steps)
+    transition(task, "review_required")
+    record_event(db, task.id, "task_state", {"state": task.state})
+    db.commit()
+    return task_view(task)
+
+
+@router.patch("/{task_id}/steps", response_model=TaskView)
+def edit_plan(task_id: str, body: PlanEdit, db: DbSession) -> TaskView:
+    task = get_task(db, task_id)
+    if task.state != "review_required" or task.plan_version != body.plan_version:
+        raise HTTPException(status_code=409, detail="Plan changed; reload before editing")
+    try:
+        steps = validate_steps(body.steps, json.loads(task.capabilities_json))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    replace_steps(db, task, steps)
+    db.commit()
+    return task_view(task)

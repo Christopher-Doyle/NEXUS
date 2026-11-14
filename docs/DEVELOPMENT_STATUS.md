@@ -2,7 +2,8 @@
 
 ## Milestone
 
-Milestone 1 foundation in progress.
+Milestone 1 foundation completed and pushed. Milestone 2 has a tested
+task-to-plan vertical slice; workspace selection and input files remain open.
 
 ## Implemented
 
@@ -10,30 +11,35 @@ Milestone 1 foundation in progress.
 - FastAPI `/health` and `/ready` endpoints.
 - SQLAlchemy models for the seven baseline entities and an initial Alembic migration.
 - Python and JavaScript dependency locks; GitHub Actions CI definition.
+- Persisted task creation, list, detail, deterministic planning and plan editing.
+- Strict allowlisted plan arguments, 12-step limit, dependency validation,
+  version conflict handling and a task state transition table.
+- Task composer, recent-task list and editable plan review UI.
 
 ## Incomplete
 
-Task APIs, planner, policy, tools, worker, events, approvals, artifact delivery,
-and a complete UI are not implemented. The New Task screen is disabled and
-explicitly says so.
+Optional input file upload and owner-selected workspace folders are not yet
+implemented. Ollama planning, tool execution, approvals, worker recovery,
+live events, artifact delivery and the full UI remain incomplete.
 
 ## Checks
 
-Migration applied locally. Backend health test passed. Web production build
-passed. npm audit reported zero vulnerabilities after updating Vitest.
+Both migrations applied locally. Four backend tests pass. Ruff and the web production build pass. npm audit
+reported zero vulnerabilities after updating Vitest. CI has not run remotely.
 
 ## Version control
 
-Last successful commit: none yet. Push: pending.
+Latest pushed commit: eb8460d (foundation). Milestone 2 commit pending.
 
 ## Known issues and security
 
-The current foundation does not expose task execution. Local-only origin and
-CSRF protection must be implemented before enabling mutations. Dependency
-licences and the CI run have not yet been reviewed. No secrets or user data are
-included.
+The API requires a local Host, accepted Origin and explicit intent header for
+mutations. This boundary is intended only for a local single-owner setup. The
+demo planner always uses synthetic fixture names and does not yet execute.
+Dependency licences and CI results have not yet been reviewed. No secrets or
+user data are included.
 
 ## Next task
 
-Finish foundation checks, commit and push milestone 1, then implement task
-creation and deterministic plan review.
+Commit and push the tested task-to-plan slice. Next, complete task workspace
+and input file handling, then implement the bounded Ollama adapter.
