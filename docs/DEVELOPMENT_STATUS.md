@@ -33,8 +33,8 @@ number does not imply a 60% complete release or passing security gates.
 - No outbound network fetch tool, general document parsers or
   settings UI. Network access remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
-  Simultaneous worker calls passed a threaded SQLite test, but multi-process
-  concurrency is not yet stress-tested. There is no bounded
+  Two Windows processes completed a shared 12-task queue with one execution
+  per task. There is no bounded
   task wall-clock timeout. Pause/cancel during reads were tested; writes remain
   a race to review.
 - The primary approved and rejected workflows passed a local browser smoke
@@ -47,7 +47,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 25 backend tests passed, one symlink test skipped on
+- `python -m pytest -q`: 26 backend tests passed, one symlink test skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -57,6 +57,7 @@ number does not imply a 60% complete release or passing security gates.
   persisted history after API restart, and rejection with no artifact passed.
   Four synthetic screenshots were captured and visually inspected.
 - Threaded worker claim test: one read execution across simultaneous calls.
+  Multi-process test: two workers, 12 tasks, 12 single-attempt executions.
   SSE test: `Last-Event-ID` replays the next event. Pause and cancel during
   an active read leave later steps pending. Local search tests cover scope,
   typed arguments and result bounds.
@@ -64,24 +65,24 @@ number does not imply a 60% complete release or passing security gates.
   test is skipped locally because directory symlinks are unavailable here;
   Linux CI will exercise it.
 
-Remote CI passed for the local search changes (`0cf2cfd`). A
+Remote CI passed for artifact path hardening (`d333fd7`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `0cf2cfd` (bounded local search).
-Artifact path hardening: commit and push pending.
+Latest pushed commit before this checkpoint: `d333fd7` (artifact path
+hardening). Multi-process worker test: commit and push pending.
 
 ## Known risks
 
 Local Host, Origin and explicit intent checks protect mutations in the
-single-owner development setup; they are not remote authentication. SQLite
-claims and leases have not been stress-tested across worker processes. The worker stops uncertain writes
+single-owner development setup; they are not remote authentication. The
+worker stops uncertain writes
 for manual review but has no UI to resolve them. The report quotes local source
 text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push artifact path hardening. Then stress-test multi-process
-workers, review write cancellation behavior and complete the
+Commit and push the two-process worker test. Then review write cancellation
+behavior and complete the
 remaining P0 acceptance checks.
