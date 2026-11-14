@@ -5,7 +5,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from app.config import get_settings
 from app.db import engine
+from app.ollama import model_status
 from app.tasks import router as tasks_router
 
 app = FastAPI(title="NEXUS API", version="0.1.0")
@@ -44,3 +46,9 @@ def ready() -> Health:
     with engine.connect() as connection:
         connection.execute(text("SELECT 1"))
     return Health(status="ready", version="0.1.0")
+
+
+@app.get("/api/v1/model/status")
+def local_model_status() -> dict:
+    settings = get_settings()
+    return model_status(settings.ollama_endpoint, settings.ollama_model)

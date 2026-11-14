@@ -6,9 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.contracts import PlanEdit, StepInput, StepView, TaskCreate, TaskList, TaskView
+from app.config import get_settings
+from app.contracts import PlanEdit, PlanRequest, StepInput, StepView, TaskCreate, TaskList, TaskView
 from app.db import get_db
 from app.models import Approval, Event, PlanStep, Task, utc_now
+from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
 from app.state import transition
 
@@ -96,15 +98,24 @@ def read_task(task_id: str, db: DbSession) -> TaskView:
 
 
 @router.post("/{task_id}/plan", response_model=TaskView, status_code=202)
-def plan_task(task_id: str, db: DbSession) -> TaskView:
+def plan_task(task_id: str, db: DbSession, body: PlanRequest | None = None) -> TaskView:
     task = get_task(db, task_id)
     if task.state not in {"draft", "review_required"}:
         raise HTTPException(status_code=409, detail="Task cannot be planned in its current state")
-    transition(task, "planning")
+    capabilities = json.loads(task.capabilities_json)
     try:
-        steps = validate_steps(demo_plan(json.loads(task.capabilities_json)), json.loads(task.capabilities_json))
+        if body is not None and body.mode == "ollama":
+            settings = get_settings()
+            steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, settings.ollama_model)
+        else:
+            steps = validate_steps(demo_plan(capabilities), capabilities)
+    except ModelUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ModelPlanInvalid as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    transition(task, "planning")
     replace_steps(db, task, steps)
     transition(task, "review_required")
     record_event(db, task.id, "task_state", {"state": task.state})

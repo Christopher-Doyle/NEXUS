@@ -36,6 +36,11 @@ class PlanEdit(BaseModel):
     steps: list[StepInput] = Field(min_length=1, max_length=12)
 
 
+class PlanRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mode: Literal["demo", "ollama"] = "demo"
+
+
 class StepView(BaseModel):
     id: str
     ordinal: int

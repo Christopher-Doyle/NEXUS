@@ -14,7 +14,9 @@ authentication scheme.
 | GET | `/api/v1/tasks/{id}` | Read a task and its steps |
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
+| GET | `/api/v1/model/status` | Check configured local Ollama model |
 
-OpenAPI is available at `/docs` while the API runs. Only the deterministic
-demo planner is currently available. Task execution, approval, events, and
+OpenAPI is available at `/docs` while the API runs. `POST /plan` accepts
+`{"mode":"demo"}` or `{"mode":"ollama"}`. Ollama requires `OLLAMA_MODEL` in
+the environment; no model is downloaded automatically. Task execution, approval, events, and
 artifacts are not yet exposed.

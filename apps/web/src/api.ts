@@ -16,6 +16,7 @@ export const api = {
   listTasks: () => request<{ items: Task[]; total: number }>('/tasks'),
   getTask: (id: string) => request<Task>(`/tasks/${id}`),
   createTask: (draft: TaskDraft) => request<Task>('/tasks', 'POST', draft),
-  planTask: (id: string) => request<Task>(`/tasks/${id}/plan`, 'POST'),
+  planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),
+  modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
   editPlan: (task: Task, steps: Step[]) => request<Task>(`/tasks/${task.id}/steps`, 'PATCH', { plan_version: task.plan_version, steps: steps.map(({ description, tool_name, args, dependencies }) => ({ description, tool_name, args, dependencies })) }),
 }
