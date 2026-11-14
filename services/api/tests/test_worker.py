@@ -15,6 +15,7 @@ from app.models import Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
 from app.tool_policy import ToolDenied, approval_scope, workspace_file
+from app.tool_runner import artifact_dir
 from app.worker import run_once
 
 
@@ -23,6 +24,24 @@ def test_workspace_rejects_traversal(tmp_path) -> None:
     assert workspace_file(str(tmp_path), "note.md").name == "note.md"
     with pytest.raises(ToolDenied):
         workspace_file(str(tmp_path), "../secret.md")
+
+
+def test_artifact_directory_rejects_symlink_redirection(tmp_path) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    data = tmp_path / "data"
+    data.mkdir()
+    try:
+        (data / "artifacts").symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("Directory symlinks are unavailable on this host")
+    with pytest.raises(ToolDenied, match="redirected"):
+        artifact_dir(str(data), "task")
+    (data / "artifacts").unlink()
+    (data / "artifacts").mkdir()
+    (data / "artifacts" / "task").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ToolDenied, match="redirected"):
+        artifact_dir(str(data), "task")
 
 
 def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:

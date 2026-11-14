@@ -47,7 +47,8 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 25 backend tests passed, one dependency deprecation warning.
+- `python -m pytest -q`: 25 backend tests passed, one symlink test skipped on
+  this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: two frontend API tests passed.
@@ -59,14 +60,17 @@ number does not imply a 60% complete release or passing security gates.
   SSE test: `Last-Event-ID` replays the next event. Pause and cancel during
   an active read leave later steps pending. Local search tests cover scope,
   typed arguments and result bounds.
+- Artifact directory symlink redirection is rejected in code. The real symlink
+  test is skipped locally because directory symlinks are unavailable here;
+  Linux CI will exercise it.
 
-Remote CI passed for the artifact library changes (`3a4a27e`). A
+Remote CI passed for the local search changes (`0cf2cfd`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `3a4a27e` (artifact library and
-reliability tests). Local search and pause/cancel tests: commit and push pending.
+Latest pushed commit before this checkpoint: `0cf2cfd` (bounded local search).
+Artifact path hardening: commit and push pending.
 
 ## Known risks
 
@@ -78,6 +82,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push local search with pause/cancel tests. Then stress-test
-multi-process workers, review write cancellation behavior and complete the
+Commit and push artifact path hardening. Then stress-test multi-process
+workers, review write cancellation behavior and complete the
 remaining P0 acceptance checks.

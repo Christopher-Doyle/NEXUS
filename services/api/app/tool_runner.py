@@ -10,6 +10,19 @@ from app.models import Artifact, Execution, PlanStep, Task
 from app.tool_policy import ToolDenied, workspace_file
 
 
+def artifact_dir(data_dir: str, task_id: str) -> Path:
+    data_root = Path(data_dir).resolve()
+    artifact_root = data_root / "artifacts"
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    if artifact_root.resolve() != artifact_root:
+        raise ToolDenied("Artifact directory is redirected")
+    root = artifact_root / task_id
+    root.mkdir(exist_ok=True)
+    if root.resolve() != root:
+        raise ToolDenied("Task artifact directory is redirected")
+    return root
+
+
 def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
     args = json.loads(step.args_json)
     if step.tool_name == "read_file":
@@ -49,8 +62,7 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
             lines += [f"## {reading['source']}", "", reading["content"].strip(), "", f"Source SHA-256: `{reading['sha256']}`", ""]
         content = "\n".join(lines)
         data = content.encode("utf-8")
-        root = Path(get_settings().data_dir).resolve() / "artifacts" / task.id
-        root.mkdir(parents=True, exist_ok=True)
+        root = artifact_dir(get_settings().data_dir, task.id)
         target = root / args["filename"]
         try:
             with target.open("xb") as output:
