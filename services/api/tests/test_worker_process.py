@@ -1,12 +1,13 @@
 import json
 import multiprocessing
 import time
+from datetime import timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 
 from app.db import Base, make_engine
-from app.models import Execution, PlanStep, Task
+from app.models import Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
 from app.worker import run_once
@@ -26,6 +27,63 @@ def process_worker(database_url: str, gate, expected: int) -> None:
             break
         time.sleep(0.01)
     engine.dispose()
+
+
+def interrupted_read_worker(database_url: str, entered) -> None:
+    from app import worker
+
+    engine = make_engine(database_url)
+    factory = sessionmaker(bind=engine)
+
+    def blocked_read(*_args):
+        entered.set()
+        time.sleep(60)
+
+    worker.run_tool = blocked_read
+    with factory() as db:
+        worker.run_once(db)
+    engine.dispose()
+
+
+def test_killed_worker_replays_expired_read_lease(tmp_path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'crash.db'}"
+    engine = make_engine(database_url)
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine)
+    with factory() as db:
+        task = Task(goal="Recover after process exit", state="queued", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file"]', input_files_json='["brief.md"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        step = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="pending")
+        db.add(step)
+        db.flush()
+        task_id, step_id = task.id, step.id
+        db.commit()
+    context = multiprocessing.get_context("spawn")
+    entered = context.Event()
+    process = context.Process(target=interrupted_read_worker, args=(database_url, entered))
+    try:
+        process.start()
+        assert entered.wait(timeout=10), "Worker did not enter the read"
+        process.terminate()
+        process.join(timeout=5)
+        assert not process.is_alive()
+        with factory() as db:
+            assert db.get(Task, task_id).state == "running"
+            execution = db.scalar(select(Execution).where(Execution.step_id == step_id))
+            assert execution.attempt == 1 and execution.status == "running"
+            execution.lease_until = utc_now() - timedelta(seconds=1)
+            db.commit()
+        with factory() as db:
+            assert run_once(db)
+            assert db.get(Task, task_id).state == "completed"
+            execution = db.scalar(select(Execution).where(Execution.step_id == step_id))
+            assert execution.attempt == 2 and execution.status == "completed"
+    finally:
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=5)
+        engine.dispose()
 
 
 def test_two_processes_complete_queue_without_duplicate_executions(tmp_path) -> None:

@@ -93,6 +93,8 @@ number does not imply a 60% complete release or passing security gates.
   the downloaded report contains its citation section.
 - Expired read lease recovery stops with `RetryExhausted` after the third
   attempt, without dispatching another tool call.
+- A spawned worker process was terminated inside an active read. After its
+  lease expired, a second worker completed the same step on attempt two.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -103,7 +105,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for citation export (`b1aa4cd`).
+Remote CI passed all three jobs for bounded retries (`e22d9bc`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -113,8 +115,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `b1aa4cd` (verified report
-citations). Bounded safe-read retries: commit and push pending.
+Latest pushed commit before this checkpoint: `e22d9bc` (bounded safe-read
+retries). Killed-worker recovery test: commit and push pending.
 
 ## Known risks
 
@@ -126,5 +128,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push bounded safe-read retries in CI. Then test crash recovery and
-build the uncertain-write manual resolution workflow.
+Verify and push the killed-worker recovery test in CI. Then build the
+uncertain-write manual resolution workflow.
