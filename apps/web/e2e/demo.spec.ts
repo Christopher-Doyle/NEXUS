@@ -26,6 +26,16 @@ test('approved demo completes with a report and persisted history', async ({ pag
   expect(cockpitA11y.violations.map(item => item.id)).toEqual([])
   await page.getByRole('link', { name: 'History' }).click()
   await expect(page.getByRole('link', { name: 'Read the sample project notes and generate a structured report.' })).toBeVisible()
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Export history for Read the sample project notes and generate a structured report.' }).click(),
+  ])
+  const exported = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf-8'))
+  expect(exported.format).toBe('nexus-task-history-v1')
+  expect(exported.task.state).toBe('completed')
+  expect(exported.journal.length).toBeGreaterThan(0)
+  expect(exported.executions.some((item: { tool_name: string }) => item.tool_name === 'write_report')).toBeTruthy()
+  expect(exported.artifacts.some((item: { filename: string }) => item.filename === 'project-report.md')).toBeTruthy()
 })
 
 test('rejected report write produces no artifact', async ({ page }) => {

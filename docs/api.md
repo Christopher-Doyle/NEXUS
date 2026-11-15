@@ -33,6 +33,11 @@ authentication scheme.
 | POST | `/api/v1/approvals/{id}/decision` | Decide an exact approval scope |
 | GET | `/api/v1/artifacts/{id}` | Verified artifact download |
 
+The History page can download one task's JSON record. It combines the task,
+journal (up to 500 events), execution receipts (up to 100) and artifact
+metadata from these read endpoints. The export is a browser snapshot, not an
+atomic database backup; it excludes source file contents and artifact bytes.
+
 OpenAPI is available at `/docs` while the API runs. `POST /plan` accepts
 `{"mode":"demo"}` or `{"mode":"ollama"}`. Ollama requires `OLLAMA_MODEL` in
 the environment; no model is downloaded automatically. The worker must run in

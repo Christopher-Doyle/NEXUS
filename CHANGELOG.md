@@ -13,6 +13,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   local settings, confirmed task deletion and reproducible browser workflows.
 - Redacted filesystem errors in journals, escaped untrusted report HTML and
   rejected requests for unavailable network tools.
+- Added per-task JSON history export from the History page, covering task
+  metadata, bounded journal, execution receipts and artifact metadata.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.

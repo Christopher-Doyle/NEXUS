@@ -46,6 +46,12 @@ export const api = {
   journal: (id: string) => request<JournalEvent[]>(`/tasks/${id}/journal`),
   executions: (id: string) => request<ExecutionReceipt[]>(`/tasks/${id}/executions`),
   artifacts: (id: string) => request<Artifact[]>(`/tasks/${id}/artifacts`),
+  exportTask: async (id: string) => {
+    const [task, journal, executions, artifacts] = await Promise.all([
+      api.getTask(id), api.journal(id), api.executions(id), api.artifacts(id),
+    ])
+    return { format: 'nexus-task-history-v1', exported_at: new Date().toISOString(), task, journal, executions, artifacts }
+  },
   recovery: (id: string) => request<Recovery>(`/tasks/${id}/recovery`),
   resolveRecovery: (id: string, inspection: Recovery, decision: 'accept_existing' | 'confirm_absent') => request<{ task_state: string; step_state: string; decision: string }>(`/tasks/${id}/recovery`, 'POST', { step_id: inspection.step_id, expected_sha256: inspection.expected_sha256, decision }),
   artifactLibrary: (offset = 0) => request<{ items: ArtifactRecord[]; total: number }>(`/artifacts?offset=${offset}`),

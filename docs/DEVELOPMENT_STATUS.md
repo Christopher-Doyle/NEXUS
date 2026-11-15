@@ -85,7 +85,7 @@ application or passing all security gates.
   keyboard and assistive technology review, a clean-clone installation
   outside CI and the browser Ollama flow remain unverified.
 - The local security review documents remaining limitations. There is no
-  automatic retention schedule or task export UI yet.
+  automatic retention schedule or bulk task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
   added without an explicit owner decision.
 
@@ -103,6 +103,8 @@ application or passing all security gates.
   path persists a deadline after reload without horizontal overflow at 390px.
   Automated WCAG A/AA checks pass on five core views after correcting the
   plan reorder buttons' accessible names.
+- The browser flow downloads a per-task JSON history export and checks its
+  task state, journal, report execution receipt and artifact metadata.
 - `npm audit`: zero vulnerabilities after updating Vitest.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
@@ -153,8 +155,7 @@ application or passing all security gates.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
 
-Remote CI passed all three jobs for supervised timeouts (`2a374a8`);
-the security-review commit is pending its remote run.
+Remote CI passed all three jobs for the security review (`0406ebc`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -164,8 +165,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `2a374a8` (supervised tool
-timeouts). Local security audit and fixes: commit and push pending.
+Latest pushed commit before this checkpoint: `0406ebc` (local security
+review). Per-task history export is locally tested and pending commit.
 
 ## Known risks
 
@@ -178,5 +179,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Push the tested security-review fixes and verify remote CI. Continue with
+Commit and push per-task history export, then verify remote CI. Continue with
 clean-checkout setup, manual accessibility and performance gates.
