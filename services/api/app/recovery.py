@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.db import begin_write, get_db
 from app.models import Artifact, Execution, PlanStep, Task, utc_now
 from app.registry import WriteReportArgs, WriteReportResult
+from app.state import deadline_expired
 from app.tasks import record_event
 from app.tool_policy import ToolDenied
 from app.tool_runner import report_bytes
@@ -87,6 +88,10 @@ def resolve_recovery(task_id: str, body: RecoveryDecision, db: DbSession) -> dic
             task.state = "completed"
             task.updated_at = utc_now()
             task.completed_at = task.updated_at
+        elif not deadline_expired(task):
+            task.state = "queued"
+            task.updated_at = utc_now()
+            task.completed_at = None
     elif snapshot["status"] == "absent":
         execution.status = "failed"
         execution.error_code = "ConfirmedAbsent"

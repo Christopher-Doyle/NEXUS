@@ -26,6 +26,9 @@ An uncertain report write stops for manual review.
 The recovery API reconstructs expected report bytes from verified read
 receipts. An operator may accept an existing byte-for-byte match or mark a
 missing report as absent; mismatched files remain blocked.
+After an accepted report, dependent steps are requeued while the deadline is
+valid. A real process-kill test covers the write, rollback, review and
+reconciliation sequence.
 
 `write_report` needs a one-hour approval whose scope includes task, plan
 version, step, and argument hash. Immediately before the write, the worker

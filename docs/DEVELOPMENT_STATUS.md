@@ -7,10 +7,9 @@ remain open for broader requirements. Milestone 7 is underway; Milestone 8
 is not release-ready.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
-through NX-N03. Nine have verified baseline behavior (NX-F01, F02, F03, F04,
-F05, F07, N01, N02, N03), so functional P0 progress is **9/10 = 90%**. F06
-is partially implemented and needs its remaining acceptance checks. This
-number does not imply a 60% complete release or passing security gates.
+through NX-N03. All ten have verified baseline behavior, so functional P0
+progress is **10/10 = 100%**. This number does not imply a release-ready
+application or passing all security gates.
 
 ## Implemented
 
@@ -48,6 +47,7 @@ number does not imply a 60% complete release or passing security gates.
 - An uncertain report write has a recovery inspection and cockpit action.
   The operator can accept an on-disk file only when it exactly matches the
   report rebuilt from verified read receipts, or confirm that no file exists.
+  Accepted reports requeue dependent steps if the task deadline is still valid.
 - Local settings page persists the chosen Ollama model, planning timeout and
   task dispatch deadline. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
@@ -76,7 +76,7 @@ number does not imply a 60% complete release or passing security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
-- `python -m pytest -q`: 45 backend tests passed, two symlink tests skipped on
+- `python -m pytest -q`: 47 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -106,7 +106,9 @@ number does not imply a 60% complete release or passing security gates.
   before committing its artifact record. Recovery left one file and one
   execution and flagged the write for review without replaying it.
 - Recovery API tests cover exact-match acceptance, stale digest rejection,
-  absent-file acknowledgement and mismatched-file refusal.
+  absent-file acknowledgement, mismatched-file refusal, resumed dependent
+  steps and deadline-guarded recovery. The real killed-write test reconciles
+  its on-disk report to completion.
 - Receipt API test verifies tool version, execution metadata and exclusion
   of read contents; browser E2E checks the receipt view.
 - Artifact and deletion-directory symlink redirection is rejected in code.
@@ -119,7 +121,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for manual recovery (`c49dae9`).
+Remote CI passed all three jobs for tool receipts (`1d3f017`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -129,8 +131,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `c49dae9` (manual report
-recovery). Persisted tool receipts: commit and push pending.
+Latest pushed commit before this checkpoint: `1d3f017` (persisted tool
+receipts). Resumed multi-step recovery: commit and push pending.
 
 ## Known risks
 
@@ -142,5 +144,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push persisted tool receipts in CI. Then complete F06 resumed
-multi-step workflow acceptance and remaining release gates.
+Verify and push resumed multi-step recovery in CI. Then tackle remaining
+release gates: tool process timeouts, accessibility, comprehensive security
+review, platform paths, and performance evidence.

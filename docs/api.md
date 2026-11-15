@@ -68,3 +68,6 @@ inspection, and `decision` (`accept_existing` or `confirm_absent`). A matching
 file is checked against the report rebuilt from verified read receipts before
 an artifact record is restored. A missing file can be acknowledged without
 retrying the write. Mismatched or redirected files cannot be accepted.
+When a report is accepted, unfinished dependent steps are queued if the task
+deadline has not expired. An expired task stays failed with its verified
+artifact available for download.

@@ -109,7 +109,9 @@ def test_killed_worker_replays_expired_read_lease(tmp_path) -> None:
         engine.dispose()
 
 
-def test_killed_worker_does_not_repeat_uncertain_write(tmp_path) -> None:
+def test_killed_worker_does_not_repeat_uncertain_write(tmp_path, monkeypatch) -> None:
+    from app import recovery
+
     database_url = f"sqlite:///{tmp_path / 'uncertain.db'}"
     engine = make_engine(database_url)
     Base.metadata.create_all(engine)
@@ -150,6 +152,15 @@ def test_killed_worker_does_not_repeat_uncertain_write(tmp_path) -> None:
             assert db.get(PlanStep, write_id).state == "needs_review"
             assert db.scalar(select(func.count()).select_from(Execution).where(Execution.step_id == write_id)) == 1
             assert not run_once(db)
+        assert list(report.parent.iterdir()) == [report]
+        monkeypatch.setattr(recovery, "get_settings", lambda: SimpleNamespace(data_dir=str(tmp_path)))
+        with factory() as db:
+            inspection = recovery.recovery_status(task_id, db)
+            assert inspection["status"] == "matches"
+        with factory() as db:
+            resolved = recovery.resolve_recovery(task_id, recovery.RecoveryDecision(step_id=write_id, decision="accept_existing", expected_sha256=inspection["expected_sha256"]), db)
+            assert resolved["task_state"] == "completed"
+            assert db.scalar(select(func.count()).select_from(Artifact).where(Artifact.task_id == task_id)) == 1
         assert list(report.parent.iterdir()) == [report]
     finally:
         if process.is_alive():

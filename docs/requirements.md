@@ -11,11 +11,11 @@ it does not mean the v1 release gate has passed.
 | NX-F03 | Verified baseline | Registry schemas, capability grant and argument hash are checked at dispatch; invalid output is rejected. |
 | NX-F04 | Verified baseline | File writes require exact approval. Outbound fetch remains disabled until SSRF controls are complete. |
 | NX-F05 | Verified baseline | SSE streams states and journal events. The cockpit shows search evidence, artifact links and persisted per-tool receipts with version, attempt, timing, status and hashes. Browser and API tests verify the view without exposing read contents. Accessibility audit remains a release gate. |
-| NX-F06 | Partial | Journal, leases, safe read replay after a real worker kill, bounded attempts and uncertain-write stop are tested. The recovery API and cockpit can verify and accept an existing report or confirm absence; complete resumed multi-step workflow acceptance remains. |
+| NX-F06 | Verified baseline | Journal and leases survive process termination. A killed read resumes safely; a killed write stops for review, then exact-file reconciliation restores the artifact and requeues dependent steps within the task deadline. Tests cover the full crash and recovery path. |
 | NX-F07 | Verified baseline | Downloaded Markdown reports include numbered source citations, line ranges and SHA-256 snapshots. A tampered read receipt prevents report creation; browser and backend tests cover export. Semantic claims are not independently verified. |
 | NX-N01 | Verified baseline | Registry contains no shell tool and tool grants are checked server-side. |
 | NX-N02 | Verified baseline | Executions carry stable unique keys; a killed worker after report file creation leaves one file and one execution, and recovery stops for review without replaying the write. Safe reads retry within a three-attempt limit. |
 | NX-N03 | Verified baseline | Synthetic fixture demo runs without an LLM, including automated approval and rejection browser tests. |
 
-**Measured baseline:** 9 of 10 P0 IDs, or **90%**. Release readiness is lower:
+**Measured baseline:** 10 of 10 P0 IDs, or **100%**. Release readiness is lower:
 security, accessibility, clean-clone and documentation gates are still open.
