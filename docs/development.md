@@ -61,3 +61,9 @@ To exercise Ollama planning and execution through the browser with an already in
 model, set `NEXUS_E2E_OLLAMA_MODEL` to its local name before running
 `npm run test:e2e`. The regular suite leaves the model unset and skips this
 optional case. The runner never downloads a model.
+
+For a small loopback API latency sample, run `uv run python scripts/measure_local.py`
+from `services/api`. It migrates an isolated temporary database, starts an API
+process on a free loopback port, and reports median, p95 and maximum times for
+100 `/health`, 100 `/ready` and 10 synthetic task-creation requests. This is a
+single-process smoke measurement, not a load or release capacity benchmark.

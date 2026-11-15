@@ -169,8 +169,13 @@ application or passing all security gates.
   The standard browser tests pass with the supervised production worker.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
+- `scripts/measure_local.py` ran against an isolated migrated SQLite database
+  and loopback API on Windows 11 / Python 3.13.16. For 100 sequential requests,
+  `/health` median/p95/max was 1.09/1.38/4.16 ms and `/ready` was
+  1.16/1.44/1.60 ms. Ten synthetic task creates measured 3.59/5.17/15.97 ms.
+  These are one-host smoke timings, not throughput or capacity claims.
 
-Remote CI passed all three jobs for the keyboard checkpoint (`1ca62ec`).
+Remote CI passed all three jobs for the Ollama input-scope checkpoint (`5b82457`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -184,8 +189,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `1ca62ec` (keyboard task path).
-The Ollama input-scope fix and full-workflow test are pending commit.
+Latest pushed commit before this checkpoint: `5b82457` (Ollama input scope
+and full browser workflow). The latency smoke script is pending commit.
 
 ## Known risks
 
@@ -198,5 +203,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the Ollama input-scope fix with its full-workflow test. Then
-continue with manual assistive technology and performance release gates.
+Commit and push the measured latency script. Continue with manual assistive
+technology review and load/capacity testing before a stable release.

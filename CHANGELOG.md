@@ -22,6 +22,7 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   report test that assumed a particular checkout line-ending convention.
 - Verified task-form keyboard focus order and Enter submission in the browser
   suite.
+- Added a reproducible isolated loopback API latency smoke script.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.
