@@ -34,3 +34,17 @@ test('rejected report write produces no artifact', async ({ page }) => {
   await expect(page.locator('.cockpit-head .chip')).toHaveText('failed')
   await expect(page.getByText('No report has been written yet.')).toBeVisible()
 })
+
+test('mobile settings remain usable and persist a deadline', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Settings' }).click()
+  await expect(page.getByRole('heading', { name: 'Settings.' })).toBeVisible()
+  const deadline = page.getByLabel('Task dispatch deadline, seconds')
+  await deadline.fill('1200')
+  await page.getByRole('button', { name: 'Save settings' }).click()
+  await expect(page.getByRole('status')).toHaveText('Settings saved locally.')
+  await page.reload()
+  await expect(deadline).toHaveValue('1200')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+})
