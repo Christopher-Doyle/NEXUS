@@ -13,7 +13,7 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Implemented
 
-- FastAPI and React/Vite local application with four explicit database migrations.
+- FastAPI and React/Vite local application with five explicit database migrations.
 - Task creation with constraints, bounded text attachments or an approved local
   folder; deterministic plan generation, editing, version checks and state transitions.
 - Optional Ollama planning with structured JSON, local endpoint restriction,
@@ -26,6 +26,9 @@ number does not imply a 60% complete release or passing security gates.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
 - Worker heartbeat with a 10-second liveness window and dashboard status.
+- A configurable one-hour default task dispatch deadline is stored with each
+  started task. Expired queued, paused and approval-waiting tasks fail before
+  another tool action; approval and report-write boundaries recheck it.
 - Dashboard, task composer, plan review, execution cockpit and persisted task
   history with search, status filtering and pagination. The cockpit includes a
   timeline, approval controls, journal and artifact links.
@@ -37,8 +40,8 @@ number does not imply a 60% complete release or passing security gates.
   settings UI. Network access remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
-  per task. There is no bounded
-  task wall-clock timeout. Pause/cancel during reads and cancellation at the
+  per task. The new deadline stops future tool dispatch, but does not kill an
+  in-flight read or write. Pause/cancel during reads and cancellation at the
   report write boundary are covered by tests.
 - Tool timeouts are declared but not yet enforced as hard process deadlines.
 - The primary approved and rejected workflows passed a local browser smoke
@@ -50,8 +53,8 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Checks executed
 
-- `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 31 backend tests passed, one symlink test skipped on
+- `uv run alembic upgrade head`: five migrations applied locally.
+- `python -m pytest -q`: 32 backend tests passed, one symlink test skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -72,13 +75,13 @@ number does not imply a 60% complete release or passing security gates.
   test is skipped locally because directory symlinks are unavailable here;
   Linux CI will exercise it.
 
-Remote CI passed for report cancellation serialization (`c965728`). A
-real Ollama invocation has not been verified.
+Remote CI passed for the tool registry (`cf8c349`). Ollama is installed with
+two local models; a real planning invocation has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `c965728` (report cancellation
-serialization). Registry changes: commit and push pending.
+Latest pushed commit before this checkpoint: `cf8c349` (tool registry).
+Task deadline changes: commit and push pending.
 
 ## Known risks
 
@@ -90,6 +93,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the explicit tool registry. Then complete the remaining P0
-acceptance checks, especially execution deadlines, retention controls,
-security review and reproducible browser tests.
+Commit and push the task deadline. Then verify planning with the installed
+local Ollama model, implement retention controls, and complete the remaining
+P0 acceptance checks and reproducible browser tests.

@@ -14,7 +14,7 @@ from app.config import get_settings
 from app.contracts import ApprovalDecision, ApprovalView
 from app.db import SessionLocal, begin_write, get_db
 from app.models import Approval, Artifact, Event, PlanStep, Task, utc_now
-from app.state import transition
+from app.state import deadline_expired, transition
 from app.tasks import record_event
 from app.tool_policy import approval_scope
 
@@ -44,6 +44,11 @@ def decide_approval(approval_id: str, body: ApprovalDecision, db: DbSession) -> 
         raise HTTPException(status_code=404, detail="Approval not found")
     step = db.get(PlanStep, approval.step_id)
     task = db.get(Task, step.task_id)
+    if deadline_expired(task) and task.state == "waiting_approval":
+        transition(task, "failed")
+        record_event(db, task.id, "task_timeout", {"deadline_at": task.deadline_at.isoformat()})
+        db.commit()
+        raise HTTPException(status_code=409, detail="Task execution deadline expired")
     expiry = approval.expires_at.replace(tzinfo=UTC) if approval.expires_at and approval.expires_at.tzinfo is None else approval.expires_at
     if approval.decision != "pending" or task.state != "waiting_approval" or approval.scope_hash != body.scope_hash or approval.scope_hash != approval_scope(task, step) or (expiry is not None and expiry <= utc_now()):
         raise HTTPException(status_code=409, detail="Approval is stale, expired or already decided")

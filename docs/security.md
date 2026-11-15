@@ -10,6 +10,9 @@ It validates the tool grant, typed arguments and argument hash at dispatch.
 The registry also validates the output shape and serialized size before an
 execution result is persisted. Registered timeouts are not yet hard process
 deadlines.
+Started tasks have a persisted dispatch deadline, one hour by default. The
+worker fails expired tasks before scheduling another tool, and an approval or
+report write rechecks the deadline. A tool already in progress may finish.
 Reads resolve the canonical path under the task workspace, reject symlink
 escapes, and cap Markdown/text files at 64 KiB. Uploaded text inputs are
 bounded to five files. Approved folders must exactly match the operator's

@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
     ollama_model: str = ""
     data_dir: str = "./data"
     approved_workspaces: str = ""
+    task_timeout_seconds: int = Field(default=3600, ge=60, le=86400)
 
 
 @lru_cache

@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import UTC
+from datetime import UTC, timedelta
 from itertools import islice
 from pathlib import Path
 from typing import Annotated
@@ -40,6 +40,7 @@ def task_view(task: Task) -> TaskView:
         created_at=task.created_at.replace(tzinfo=UTC) if task.created_at.tzinfo is None else task.created_at,
         updated_at=task.updated_at.replace(tzinfo=UTC) if task.updated_at.tzinfo is None else task.updated_at,
         completed_at=(task.completed_at.replace(tzinfo=UTC) if task.completed_at.tzinfo is None else task.completed_at) if task.completed_at else None,
+        deadline_at=(task.deadline_at.replace(tzinfo=UTC) if task.deadline_at.tzinfo is None else task.deadline_at) if task.deadline_at else None,
         steps=[StepView(
             id=step.id, ordinal=step.ordinal, description=step.description,
             tool_name=step.tool_name, args=json.loads(step.args_json), args_hash=step.args_hash,
@@ -193,6 +194,7 @@ def start_task(task_id: str, db: DbSession) -> TaskView:
     task = get_task(db, task_id)
     if task.state != "review_required" or not task.steps:
         raise HTTPException(status_code=409, detail="A reviewed plan is required before starting")
+    task.deadline_at = utc_now() + timedelta(seconds=get_settings().task_timeout_seconds)
     transition(task, "queued")
     record_event(db, task.id, "task_state", {"state": task.state})
     db.commit()

@@ -33,5 +33,7 @@ SQLite before the SSE endpoint emits them, and clients can replay by cursor.
 The [tool registry](../services/api/app/registry.py) declares each tool's
 parameters, output schema, risk, retry mode, and resource bounds. The current
 implementation supports selected text files and Markdown reports. The
-declared tool timeout is not yet a hard process timeout; a bounded task wall
-clock and external network fetch remain future security work.
+declared tool timeout is not yet a hard process timeout. A persisted task
+deadline defaults to one hour and prevents new actions after expiry. It does
+not interrupt an in-flight tool. External network fetch remains future
+security work.

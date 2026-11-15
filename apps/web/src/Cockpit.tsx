@@ -7,6 +7,7 @@ function eventLabel(event: JournalEvent): string {
   if (event.type === 'task_state') return `Task ${String(event.payload.state).replaceAll('_', ' ')}`
   if (event.type === 'step_completed') return `${String(event.payload.tool_name).replaceAll('_', ' ')} completed`
   if (event.type === 'approval_decided') return `Write ${String(event.payload.decision)}`
+  if (event.type === 'task_timeout') return 'Task execution deadline reached'
   return event.type.replaceAll('_', ' ')
 }
 
@@ -40,7 +41,7 @@ export function Cockpit() {
   if (task.isError || !task.data) return <main><p role="alert">{task.error?.message || 'Task not found'}</p></main>
   const pending = approvals.data?.filter(item => item.task_id === id) || []
   return <main><div className="page-heading"><p className="kicker"><Link to="/">Overview</Link> / Execution</p><h1>Execution cockpit</h1><p>{task.data.goal}</p></div>
-    <div className="cockpit-head"><span className={`chip ${task.data.state}`}>{task.data.state.replace('_', ' ')}</span><div className="cockpit-controls">{task.data.state === 'running' && <button className="text-button" onClick={() => pause.mutate()} disabled={pause.isPending}>Pause</button>}{task.data.state === 'paused' && <button className="text-button" onClick={() => resume.mutate()} disabled={resume.isPending}>Resume</button>}{!['completed', 'cancelled', 'failed'].includes(task.data.state) && <button className="text-button" onClick={() => cancel.mutate()} disabled={cancel.isPending}>Cancel task</button>}</div></div>
+    <div className="cockpit-head"><span className={`chip ${task.data.state}`}>{task.data.state.replace('_', ' ')}</span>{task.data.deadline_at && !terminal && <small>Execution deadline: {new Date(task.data.deadline_at).toLocaleString()}</small>}<div className="cockpit-controls">{task.data.state === 'running' && <button className="text-button" onClick={() => pause.mutate()} disabled={pause.isPending}>Pause</button>}{task.data.state === 'paused' && <button className="text-button" onClick={() => resume.mutate()} disabled={resume.isPending}>Resume</button>}{!['completed', 'cancelled', 'failed'].includes(task.data.state) && <button className="text-button" onClick={() => cancel.mutate()} disabled={cancel.isPending}>Cancel task</button>}</div></div>
     {pending.length > 0 && <section className="approval-panel"><h2>Approval required</h2><p>Review each action before allowing a file write. Approval applies only to these exact step arguments.</p>{pending.map(item => <div className="approval-row" key={item.id}><strong>{item.requested_action}</strong><div><button className="button" onClick={() => decision.mutate({ approval: item, value: 'approved' })} disabled={decision.isPending}>Approve write</button><button className="text-button" onClick={() => decision.mutate({ approval: item, value: 'rejected' })} disabled={decision.isPending}>Reject</button></div></div>)}</section>}
     {(decision.isError || cancel.isError || pause.isError || resume.isError) && <p role="alert" className="form-error">{decision.error?.message || cancel.error?.message || pause.error?.message || resume.error?.message}</p>}
     <section className="empty-panel"><h2>Steps</h2><ol className="timeline">{task.data.steps.map(step => <li key={step.id}><span>{step.description}</span><span className={`chip ${step.state}`}>{step.state}</span></li>)}</ol></section>

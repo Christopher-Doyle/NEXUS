@@ -34,6 +34,10 @@ the environment; no model is downloaded automatically. The worker must run in
 a separate process for queued tasks to progress. API responses include a
 correlation ID for HTTP and validation errors.
 
+Started tasks include `deadline_at`. `TASK_TIMEOUT_SECONDS` defaults to 3600
+and may be set from 60 to 86400. The deadline prevents new tool dispatch and
+approval after expiry; it does not interrupt an in-flight operation.
+
 `search_local_docs` is a read-only plan tool. It searches only the task's
 selected Markdown and text files, returning at most 20 line excerpts. A user
 can add the step during plan review and provide the literal search text.

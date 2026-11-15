@@ -5,13 +5,13 @@ from datetime import UTC, timedelta
 from uuid import uuid4
 
 from pydantic import ValidationError
-from sqlalchemy import case, select
+from sqlalchemy import and_, case, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal, begin_write
 from app.models import Approval, Execution, PlanStep, Task, WorkerHeartbeat, utc_now
 from app.registry import REGISTRY
-from app.state import transition
+from app.state import deadline_expired, transition
 from app.tasks import record_event
 from app.tool_policy import ToolDenied, approval_scope, validate_invocation
 from app.tool_runner import run_tool
@@ -19,10 +19,16 @@ from app.tool_runner import run_tool
 
 def run_once(db: Session) -> bool:
     begin_write(db)
-    task = db.scalar(select(Task).options(selectinload(Task.steps)).where(Task.state.in_(["queued", "running", "pausing"])).order_by(case((Task.state == "pausing", 0), (Task.state == "queued", 1), else_=2), Task.created_at, Task.id))
+    expired = and_(Task.deadline_at.is_not(None), Task.deadline_at <= utc_now())
+    task = db.scalar(select(Task).options(selectinload(Task.steps)).where(or_(Task.state.in_(["queued", "running", "pausing"]), and_(Task.state.in_(["waiting_approval", "paused"]), expired))).order_by(case((expired, 0), (Task.state == "pausing", 1), (Task.state == "queued", 2), else_=3), Task.created_at, Task.id))
     if task is None:
         db.commit()
         return False
+    if deadline_expired(task):
+        transition(task, "failed")
+        record_event(db, task.id, "task_timeout", {"deadline_at": task.deadline_at.isoformat()})
+        db.commit()
+        return True
     if task.state == "pausing":
         transition(task, "paused")
         record_event(db, task.id, "task_state", {"state": task.state})
@@ -116,14 +122,14 @@ def run_once(db: Session) -> bool:
         scope = approval_scope(task, step)
         approval = db.scalar(select(Approval).where(Approval.step_id == step.id, Approval.scope_hash == scope, Approval.decision == "approved").order_by(Approval.created_at.desc()))
         expiry = approval.expires_at.replace(tzinfo=UTC) if approval and approval.expires_at and approval.expires_at.tzinfo is None else approval.expires_at if approval else None
-        if task.state != "running" or approval is None or (expiry is not None and expiry <= utc_now()):
+        if task.state != "running" or deadline_expired(task) or approval is None or (expiry is not None and expiry <= utc_now()):
             step.state = "failed"
             execution.status = "failed"
             execution.error_code = "ApprovalInvalid"
             execution.ended_at = utc_now()
             if task.state == "running":
                 transition(task, "failed")
-            record_event(db, task.id, "tool_denied", {"step_id": step.id, "error": "Approval is no longer valid"})
+            record_event(db, task.id, "tool_denied", {"step_id": step.id, "error": "Approval or task deadline is no longer valid"})
             db.commit()
             return True
     try:
