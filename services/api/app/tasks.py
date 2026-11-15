@@ -11,12 +11,22 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
-from app.contracts import PlanEdit, PlanRequest, StepInput, StepView, TaskCreate, TaskList, TaskView
+from app.contracts import (
+    PlanEdit,
+    PlanRequest,
+    StepInput,
+    StepView,
+    TaskCreate,
+    TaskDelete,
+    TaskList,
+    TaskView,
+)
 from app.db import begin_write, get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
 from app.registry import REGISTRY
+from app.retention import RetentionError, delete_task
 from app.state import TRANSITIONS, transition
 from app.tool_policy import ToolDenied, workspace_file
 
@@ -146,6 +156,22 @@ def list_tasks(db: DbSession, limit: int = 20, offset: int = 0, state: str | Non
 @router.get("/{task_id}", response_model=TaskView)
 def read_task(task_id: str, db: DbSession) -> TaskView:
     return task_view(get_task(db, task_id))
+
+
+@router.delete("/{task_id}", status_code=204)
+def remove_task(task_id: str, body: TaskDelete, db: DbSession) -> None:
+    if body.confirm_id != task_id:
+        raise HTTPException(status_code=422, detail="Confirmation does not match this task")
+    begin_write(db)
+    task = db.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.state not in {"draft", "review_required", "completed", "failed", "cancelled"}:
+        raise HTTPException(status_code=409, detail="Cancel the active task before deleting it")
+    try:
+        delete_task(db, task, get_settings().data_dir)
+    except (OSError, RetentionError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.post("/{task_id}/plan", response_model=TaskView, status_code=202)

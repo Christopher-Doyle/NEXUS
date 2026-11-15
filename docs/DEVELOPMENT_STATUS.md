@@ -3,7 +3,8 @@
 ## Milestone and measured progress
 
 Milestone 1 is complete. Milestones 2-6 have a working local demo path and
-remain open for broader requirements. Milestones 7-8 have not started.
+remain open for broader requirements. Milestone 7 is underway; Milestone 8
+is not release-ready.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
 through NX-N03. Six have verified baseline behavior (NX-F01, F02, F03, F04,
@@ -35,6 +36,9 @@ number does not imply a 60% complete release or passing security gates.
   history with search, status filtering and pagination. The cockpit includes a
   timeline, approval controls, journal and artifact links.
 - Paginated artifact library with links to the source task and verified downloads.
+- Confirmed deletion of inactive tasks removes their database journal,
+  execution records, NEXUS-owned inputs and artifacts. External approved
+  workspaces are excluded from cleanup.
 
 ## Incomplete
 
@@ -47,20 +51,20 @@ number does not imply a 60% complete release or passing security gates.
   report write boundary are covered by tests.
 - Tool timeouts are declared but not yet enforced as hard process deadlines.
 - The primary approved and rejected workflows passed a local browser smoke
-  test. Accessibility, a clean-clone demo and real Ollama remain unverified.
+  test. Accessibility, a clean-clone demo and browser Ollama flow remain unverified.
 - Error handling and logging need a full security review. There is no rate
-  limiting, input retention UI or export/delete UI yet.
+  limiting, automatic retention schedule or task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
   added without an explicit owner decision.
 
 ## Checks executed
 
 - `uv run alembic upgrade head`: five migrations applied locally.
-- `python -m pytest -q`: 33 backend tests passed, one symlink test skipped on
+- `python -m pytest -q`: 34 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
-- `npm test`: two frontend API tests passed.
+- `npm test`: three frontend API tests passed.
 - `npm audit`: zero vulnerabilities after updating Vitest.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
@@ -73,11 +77,13 @@ number does not imply a 60% complete release or passing security gates.
 - Report cancellation race tests: a cancellation committed before the write
   boundary prevents output; a cancellation during a locked write waits and
   receives a conflict after the task completes.
-- Artifact directory symlink redirection is rejected in code. The real symlink
-  test is skipped locally because directory symlinks are unavailable here;
-  Linux CI will exercise it.
+- Artifact and deletion-directory symlink redirection is rejected in code.
+  The real symlink tests are skipped locally because directory symlinks are
+  unavailable here; Linux CI will exercise them.
+- Retention test: exact confirmation and inactive-state checks; deletion of
+  task records, inputs and artifacts leaves the selected external workspace intact.
 
-Remote CI passed for the task deadline (`f1d4c73`). Ollama is installed with
+Remote CI passed for the Ollama adapter (`5442ed7`). Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
@@ -86,8 +92,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `f1d4c73` (task deadline).
-Ollama adapter change: commit and push pending.
+Latest pushed commit before this checkpoint: `5442ed7` (Ollama adapter).
+Task deletion: commit and push pending.
 
 ## Known risks
 
@@ -99,6 +105,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the Ollama adapter change. Then implement retention controls
-and complete the remaining
-P0 acceptance checks and reproducible browser tests.
+Commit and push confirmed task deletion. Then add a local settings interface,
+review API errors and rate limiting, and complete the remaining P0 acceptance
+checks and reproducible browser tests.

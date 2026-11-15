@@ -14,3 +14,10 @@ test('API errors reach the task composer', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ message: 'Folder is not approved' }) }))
   await expect(api.createTask({ goal: 'Read private notes', constraints: [], success_criteria: null, capabilities: ['read_file'], network_access: false, workspace_path: 'C:/Private', input_files: [] })).rejects.toThrow('Folder is not approved')
 })
+
+test('task deletion confirms the exact ID and accepts an empty response', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 })
+  vi.stubGlobal('fetch', fetchMock)
+  await expect(api.deleteTask('task-1')).resolves.toBeUndefined()
+  expect(fetchMock).toHaveBeenCalledWith('/api/v1/tasks/task-1', expect.objectContaining({ method: 'DELETE', body: JSON.stringify({ confirm_id: 'task-1' }) }))
+})

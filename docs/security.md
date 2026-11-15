@@ -36,3 +36,9 @@ Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.
 Ollama is restricted to a configured loopback HTTP origin. No paid API or
 telemetry is required.
+
+Task deletion requires the exact task ID in the request and is available only
+for inactive tasks. It removes task records, execution journals, and NEXUS-owned
+input and artifact directories. The selected external workspace is never a
+deletion target. Cleanup stages owned directories under the app data root;
+failure after database deletion is reported for operator cleanup.

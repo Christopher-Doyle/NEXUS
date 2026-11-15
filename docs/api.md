@@ -12,6 +12,7 @@ authentication scheme.
 | POST | `/api/v1/tasks` | Create a draft task |
 | GET | `/api/v1/tasks` | List tasks with bounded pagination, `q` goal search and `state` filter |
 | GET | `/api/v1/tasks/{id}` | Read a task and its steps |
+| DELETE | `/api/v1/tasks/{id}` | Confirmed deletion of an inactive task and its NEXUS-owned files |
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
 | GET | `/api/v1/model/status` | Check configured local Ollama model |
@@ -41,3 +42,7 @@ approval after expiry; it does not interrupt an in-flight operation.
 `search_local_docs` is a read-only plan tool. It searches only the task's
 selected Markdown and text files, returning at most 20 line excerpts. A user
 can add the step during plan review and provide the literal search text.
+
+`DELETE /tasks/{id}` requires `{"confirm_id":"<same task ID>"}` and returns
+204. Active tasks must be cancelled before deletion. Selected external
+workspaces are not deleted.

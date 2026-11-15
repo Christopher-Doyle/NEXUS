@@ -13,6 +13,7 @@ async function request<T>(path: string, method = 'GET', body?: unknown): Promise
     const detail = Array.isArray(error.detail) ? error.detail.map(item => item.msg).join(', ') : error.detail
     throw new Error(detail || error.message || `Request failed (${response.status})`)
   }
+  if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 
@@ -26,6 +27,7 @@ export const api = {
   },
   getTask: (id: string) => request<Task>(`/tasks/${id}`),
   createTask: (draft: TaskDraft) => request<Task>('/tasks', 'POST', draft),
+  deleteTask: (id: string) => request<void>(`/tasks/${id}`, 'DELETE', { confirm_id: id }),
   planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),
   modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
   workerStatus: () => request<{ active: boolean; active_count: number; last_seen_at: string | null }>('/worker/status'),

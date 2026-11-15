@@ -30,6 +30,11 @@ class TaskCreate(BaseModel):
         return value.strip()
 
 
+class TaskDelete(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    confirm_id: str
+
+
 class StepInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     description: str = Field(min_length=3, max_length=500)
