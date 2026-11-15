@@ -35,6 +35,8 @@ Each report cites the line range and recorded digest of its source text;
 the worker verifies each read receipt before report creation.
 Downloads verify both the path boundary and digest. Events are committed to
 SQLite before the SSE endpoint emits them, and clients can replay by cursor.
+The execution table also stores the registry version used for each call.
+The API exposes bounded receipts without returning read-file contents.
 
 The [tool registry](../services/api/app/registry.py) declares each tool's
 parameters, output schema, risk, retry mode, attempt limit, and resource

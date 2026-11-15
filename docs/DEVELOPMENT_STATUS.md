@@ -7,14 +7,14 @@ remain open for broader requirements. Milestone 7 is underway; Milestone 8
 is not release-ready.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
-through NX-N03. Eight have verified baseline behavior (NX-F01, F02, F03, F04,
-F07, N01, N02, N03), so functional P0 progress is **8/10 = 80%**. F05 and F06
-are partially implemented and need their remaining acceptance checks. This
+through NX-N03. Nine have verified baseline behavior (NX-F01, F02, F03, F04,
+F05, F07, N01, N02, N03), so functional P0 progress is **9/10 = 90%**. F06
+is partially implemented and needs its remaining acceptance checks. This
 number does not imply a 60% complete release or passing security gates.
 
 ## Implemented
 
-- FastAPI and React/Vite local application with six explicit database migrations.
+- FastAPI and React/Vite local application with seven explicit database migrations.
 - Task creation with constraints, bounded text attachments or an approved local
   folder; deterministic plan generation, editing, version checks and state transitions.
 - Optional Ollama planning with structured JSON, local endpoint restriction,
@@ -29,6 +29,9 @@ number does not imply a 60% complete release or passing security gates.
   schema-checked and size-bounded before persistence.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
+- Persisted tool versions and a cockpit receipt view with attempts, timing,
+  state, hashes, error codes and validated result metadata. Source text is
+  omitted from receipt responses.
 - Exported Markdown reports include numbered source citations, line ranges
   and content hashes. A mismatched stored read receipt blocks the write.
 - Worker heartbeat with a 10-second liveness window and dashboard status.
@@ -71,7 +74,8 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Checks executed
 
-- `uv run alembic upgrade head`: six migrations applied locally.
+- Fresh-database E2E setup applied all seven migrations through
+  `f6a916c64f20`.
 - `python -m pytest -q`: 45 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
@@ -103,6 +107,8 @@ number does not imply a 60% complete release or passing security gates.
   execution and flagged the write for review without replaying it.
 - Recovery API tests cover exact-match acceptance, stale digest rejection,
   absent-file acknowledgement and mismatched-file refusal.
+- Receipt API test verifies tool version, execution metadata and exclusion
+  of read contents; browser E2E checks the receipt view.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -113,7 +119,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for killed-write idempotency (`4a96034`).
+Remote CI passed all three jobs for manual recovery (`c49dae9`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -123,8 +129,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `4a96034` (killed-write
-idempotency). Manual report recovery: commit and push pending.
+Latest pushed commit before this checkpoint: `c49dae9` (manual report
+recovery). Persisted tool receipts: commit and push pending.
 
 ## Known risks
 
@@ -136,5 +142,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push manual report recovery in CI. Then complete F05 operational
-receipts and F06 resume acceptance checks.
+Verify and push persisted tool receipts in CI. Then complete F06 resumed
+multi-step workflow acceptance and remaining release gates.

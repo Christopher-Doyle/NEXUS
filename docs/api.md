@@ -24,6 +24,7 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/cancel` | Cancel an active task |
 | GET | `/api/v1/tasks/{id}/events` | SSE event stream with cursor replay |
 | GET | `/api/v1/tasks/{id}/journal` | Bounded event history |
+| GET | `/api/v1/tasks/{id}/executions` | Bounded tool receipts with version, timing, hashes and safe result metadata |
 | GET | `/api/v1/tasks/{id}/recovery` | Inspect an uncertain report write and compare its exact expected digest |
 | POST | `/api/v1/tasks/{id}/recovery` | Accept a matching existing report or acknowledge that no report exists |
 | GET | `/api/v1/tasks/{id}/artifacts` | Artifact metadata |
@@ -55,6 +56,11 @@ workspaces are not deleted.
 `PATCH /settings` accepts `ollama_model`, `ollama_timeout_seconds` (10–180),
 and `task_timeout_seconds` (60–86400). Values persist in SQLite. Workspace
 grants and the Ollama endpoint remain operator environment settings.
+
+Execution receipts persist the registered tool version at dispatch. The
+`/executions` response omits source file contents and validates stored result
+schemas before returning metadata. Historical receipts remain tied to the
+version that produced them.
 
 Recovery applies only to a failed task with a `needs_review` report step and
 execution. The POST body contains `step_id`, `expected_sha256` from the GET

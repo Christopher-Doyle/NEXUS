@@ -7,13 +7,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.contracts import ApprovalDecision, ApprovalView
 from app.db import SessionLocal, begin_write, get_db
-from app.models import Approval, Artifact, Event, PlanStep, Task, utc_now
+from app.models import Approval, Artifact, Event, Execution, PlanStep, Task, utc_now
+from app.registry import REGISTRY
 from app.state import deadline_expired, transition
 from app.tasks import record_event
 from app.tool_policy import approval_scope
@@ -98,6 +100,23 @@ def task_journal(task_id: str, db: DbSession) -> list[dict]:
         raise HTTPException(status_code=404, detail="Task not found")
     rows = db.scalars(select(Event).where(Event.task_id == task_id).order_by(Event.seq).limit(500)).all()
     return [{"id": event.seq, "type": event.kind, "occurred_at": utc_iso(event.created_at), "payload": json.loads(event.payload_json)} for event in rows]
+
+
+@router.get("/tasks/{task_id}/executions")
+def task_executions(task_id: str, db: DbSession) -> list[dict]:
+    if db.get(Task, task_id) is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    rows = db.execute(select(Execution, PlanStep).join(PlanStep, Execution.step_id == PlanStep.id).where(PlanStep.task_id == task_id).order_by(PlanStep.ordinal, Execution.attempt).limit(100)).all()
+    receipts = []
+    for execution, step in rows:
+        result = None
+        if execution.result_json:
+            try:
+                result = REGISTRY[step.tool_name].output.model_validate_json(execution.result_json).model_dump(exclude={"content"})
+            except (KeyError, ValidationError):
+                pass
+        receipts.append({"id": execution.id, "step_id": step.id, "step_ordinal": step.ordinal, "tool_name": step.tool_name, "tool_version": execution.tool_version, "args_hash": step.args_hash, "idempotency_key": execution.idempotency_key, "attempt": execution.attempt, "status": execution.status, "started_at": utc_iso(execution.started_at) if execution.started_at else None, "ended_at": utc_iso(execution.ended_at) if execution.ended_at else None, "lease_until": utc_iso(execution.lease_until) if execution.lease_until else None, "error_code": execution.error_code, "result": result})
+    return receipts
 
 
 @router.get("/tasks/{task_id}/artifacts")

@@ -7,6 +7,7 @@ export type Artifact = { id: string; filename: string; sha256: string; size_byte
 export type ArtifactRecord = Artifact & { task_id: string; task_goal: string }
 export type LocalSettings = { ollama_model: string; ollama_timeout_seconds: number; task_timeout_seconds: number; approved_workspace_count: number; network_access_enabled: boolean }
 export type Recovery = { step_id: string; filename: string; status: 'matches' | 'absent' | 'mismatch' | 'unsafe'; expected_sha256: string; actual_sha256: string | null }
+export type ExecutionReceipt = { id: string; step_id: string; step_ordinal: number; tool_name: string; tool_version: string; args_hash: string; idempotency_key: string; attempt: number; status: string; started_at: string | null; ended_at: string | null; lease_until: string | null; error_code: string | null; result: Record<string, unknown> | null }
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-Nexus-Intent': 'local' }, body: body === undefined ? undefined : JSON.stringify(body) })
@@ -43,6 +44,7 @@ export const api = {
   approvals: () => request<Approval[]>('/approvals'),
   decide: (approval: Approval, decision: 'approved' | 'rejected') => request<Approval>(`/approvals/${approval.id}/decision`, 'POST', { decision, scope_hash: approval.scope_hash }),
   journal: (id: string) => request<JournalEvent[]>(`/tasks/${id}/journal`),
+  executions: (id: string) => request<ExecutionReceipt[]>(`/tasks/${id}/executions`),
   artifacts: (id: string) => request<Artifact[]>(`/tasks/${id}/artifacts`),
   recovery: (id: string) => request<Recovery>(`/tasks/${id}/recovery`),
   resolveRecovery: (id: string, inspection: Recovery, decision: 'accept_existing' | 'confirm_absent') => request<{ task_state: string; step_state: string; decision: string }>(`/tasks/${id}/recovery`, 'POST', { step_id: inspection.step_id, expected_sha256: inspection.expected_sha256, decision }),

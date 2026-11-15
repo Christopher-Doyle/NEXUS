@@ -107,7 +107,7 @@ def run_once(db: Session) -> bool:
             record_event(db, task.id, "tool_denied", {"step_id": step.id})
             db.commit()
             return True
-        execution = Execution(step_id=step.id, attempt=1, idempotency_key=approval_scope(task, step), status="running", started_at=utc_now(), lease_until=utc_now() + timedelta(seconds=60))
+        execution = Execution(step_id=step.id, tool_version=REGISTRY[step.tool_name].version, attempt=1, idempotency_key=approval_scope(task, step), status="running", started_at=utc_now(), lease_until=utc_now() + timedelta(seconds=60))
         db.add(execution)
         step.state = "running"
         db.commit()

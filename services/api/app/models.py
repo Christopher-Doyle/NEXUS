@@ -57,6 +57,7 @@ class Execution(Base):
     __table_args__ = (UniqueConstraint("idempotency_key"), UniqueConstraint("step_id", "attempt"))
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     step_id: Mapped[str] = mapped_column(ForeignKey("plan_step.id"), index=True)
+    tool_version: Mapped[str] = mapped_column(String(32), default="1")
     attempt: Mapped[int] = mapped_column(Integer)
     idempotency_key: Mapped[str] = mapped_column(String(64))
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

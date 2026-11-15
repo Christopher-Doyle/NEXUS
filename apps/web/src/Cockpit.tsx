@@ -18,6 +18,7 @@ export function Cockpit() {
   const terminal = ['completed', 'failed', 'cancelled'].includes(task.data?.state || '')
   const approvals = useQuery({ queryKey: ['approvals'], queryFn: api.approvals, refetchInterval: terminal ? false : 5000 })
   const journal = useQuery({ queryKey: ['journal', id], queryFn: () => api.journal(id!), enabled: Boolean(id) })
+  const executions = useQuery({ queryKey: ['executions', id], queryFn: () => api.executions(id!), enabled: Boolean(id) })
   const artifacts = useQuery({ queryKey: ['artifacts', id], queryFn: () => api.artifacts(id!), enabled: Boolean(id) })
   const needsRecovery = task.data?.state === 'failed' && task.data.steps.some(step => step.state === 'needs_review')
   const recovery = useQuery({ queryKey: ['recovery', id], queryFn: () => api.recovery(id!), enabled: Boolean(id && needsRecovery) })
@@ -25,7 +26,7 @@ export function Cockpit() {
   const cancel = useMutation({ mutationFn: () => api.cancelTask(id!), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['task', id] }) })
   const pause = useMutation({ mutationFn: () => api.pauseTask(id!), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['task', id] }) })
   const resume = useMutation({ mutationFn: () => api.resumeTask(id!), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['task', id] }) })
-  const resolveRecovery = useMutation({ mutationFn: (value: 'accept_existing' | 'confirm_absent') => api.resolveRecovery(id!, recovery.data!, value), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', id] }); queryClient.invalidateQueries({ queryKey: ['recovery', id] }); queryClient.invalidateQueries({ queryKey: ['artifacts', id] }); queryClient.invalidateQueries({ queryKey: ['journal', id] }) } })
+  const resolveRecovery = useMutation({ mutationFn: (value: 'accept_existing' | 'confirm_absent') => api.resolveRecovery(id!, recovery.data!, value), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', id] }); queryClient.invalidateQueries({ queryKey: ['recovery', id] }); queryClient.invalidateQueries({ queryKey: ['artifacts', id] }); queryClient.invalidateQueries({ queryKey: ['journal', id] }); queryClient.invalidateQueries({ queryKey: ['executions', id] }) } })
 
   useEffect(() => {
     if (!id || terminal) return
@@ -33,6 +34,7 @@ export function Cockpit() {
     const update = () => {
       queryClient.invalidateQueries({ queryKey: ['task', id] })
       queryClient.invalidateQueries({ queryKey: ['journal', id] })
+      queryClient.invalidateQueries({ queryKey: ['executions', id] })
       queryClient.invalidateQueries({ queryKey: ['artifacts', id] })
       queryClient.invalidateQueries({ queryKey: ['approvals'] })
     }
@@ -53,6 +55,7 @@ export function Cockpit() {
       const result = event.payload.result as { matches?: { source: string; line: number; excerpt: string }[]; truncated?: boolean } | undefined
       return <li key={event.id}><time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time><strong>{eventLabel(event)}</strong>{event.payload.tool_name === 'search_local_docs' && result?.matches && <details><summary>{result.matches.length} source matches{result.truncated ? ' (limit reached)' : ''}</summary><ul>{result.matches.map((match, index) => <li key={`${match.source}-${match.line}-${index}`}><strong>{match.source}:{match.line}</strong> {match.excerpt}</li>)}</ul></details>}</li>
     })}</ol>}</section>
+    <section className="empty-panel"><h2>Tool receipts</h2>{executions.isLoading ? <p>Loading tool receipts…</p> : executions.isError ? <p role="alert">{executions.error.message}</p> : executions.data?.length ? <ol className="receipt-list">{executions.data.map(item => <li key={item.id}><details><summary>Step {item.step_ordinal}: {item.tool_name} v{item.tool_version} · attempt {item.attempt} · {item.status}</summary><dl><dt>Started</dt><dd>{item.started_at ? new Date(item.started_at).toLocaleString() : 'Pending'}</dd><dt>Ended</dt><dd>{item.ended_at ? new Date(item.ended_at).toLocaleString() : 'Pending'}</dd><dt>Arguments SHA-256</dt><dd>{item.args_hash}</dd><dt>Idempotency key</dt><dd>{item.idempotency_key}</dd>{item.error_code && <><dt>Error code</dt><dd>{item.error_code}</dd></>}</dl>{item.result && <pre>{JSON.stringify(item.result, null, 2)}</pre>}</details></li>)}</ol> : <p>No tool has started yet.</p>}</section>
     <section className="empty-panel"><h2>Artifacts</h2>{artifacts.data?.length ? <ul className="artifact-list">{artifacts.data.map(item => <li key={item.id}><a href={`/api/v1/artifacts/${item.id}`}>{item.filename}</a><small>{item.size_bytes} bytes · SHA-256 {item.sha256}</small></li>)}</ul> : <p>No report has been written yet.</p>}</section>
   </main>
 }

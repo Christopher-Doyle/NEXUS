@@ -10,6 +10,8 @@ test('approved demo completes with a report and persisted history', async ({ pag
   await expect(page.getByRole('heading', { name: 'Approval required' })).toBeVisible()
   await page.getByRole('button', { name: 'Approve write' }).click()
   await expect(page.locator('.cockpit-head .chip')).toHaveText('completed')
+  await expect(page.getByRole('heading', { name: 'Tool receipts' })).toBeVisible()
+  await expect(page.getByText('Step 1: read_file v1 · attempt 1 · completed')).toBeVisible()
   const reportLink = page.getByRole('link', { name: 'project-report.md' })
   await expect(reportLink).toBeVisible()
   const reportUrl = await reportLink.getAttribute('href')

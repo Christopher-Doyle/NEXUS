@@ -97,6 +97,13 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert library["total"] == 1
         assert library["items"][0]["task_id"] == task_id
         assert client.get(f"/api/v1/artifacts/{artifacts[0]['id']}").status_code == 200
+        receipts = client.get(f"/api/v1/tasks/{task_id}/executions").json()
+        assert len(receipts) == 3
+        assert [item["tool_name"] for item in receipts] == ["read_file", "read_file", "write_report"]
+        assert all(item["tool_version"] == "1" and item["idempotency_key"] and item["args_hash"] for item in receipts)
+        assert all(item["status"] == "completed" and item["started_at"] and item["ended_at"] for item in receipts)
+        assert all("content" not in (item["result"] or {}) for item in receipts)
+        assert "Atlas" not in json.dumps(receipts)
         assert any(event["type"] == "step_completed" for event in client.get(f"/api/v1/tasks/{task_id}/journal").json())
         with factory() as db:
             assert not run_once(db)
