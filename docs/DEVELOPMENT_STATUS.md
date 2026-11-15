@@ -82,8 +82,8 @@ application or passing all security gates.
 - The primary approved and rejected workflows pass isolated Playwright tests
   from a fresh migrated database. Automated WCAG A/AA checks pass on the
   dashboard, task form, settings, plan review and completed cockpit. Manual
-  keyboard and assistive technology review, a clean-clone installation
-  outside CI and the browser Ollama flow remain unverified.
+  keyboard and assistive technology review and a clean-checkout installation
+  outside CI remain unverified. The opt-in browser Ollama plan test passed.
 - The local security review documents remaining limitations. There is no
   automatic retention schedule or bulk task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
@@ -93,16 +93,22 @@ application or passing all security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
+- A separate local checkout succeeded. Offline `uv sync --extra dev` and
+  `npm ci` could not complete because the local caches lack `ruff==0.17.5`
+  and `yallist==3.1.1`; no packages were downloaded. Approval was requested
+  before attempting network-backed installation.
 - `python -m pytest -q`: 76 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
-- `npm run test:e2e`: six browser tests passed with installed Chrome, fresh
+- `npm run test:e2e`: six standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
   Automated WCAG A/AA checks pass on five core views after correcting the
   plan reorder buttons' accessible names.
+- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all seven browser tests passed;
+  the installed model generated a reviewable plan through the task form.
 - The browser flow downloads a per-task JSON history export and checks its
   task state, journal, report execution receipt and artifact metadata.
 - `npm audit`: zero vulnerabilities after updating Vitest.
@@ -151,22 +157,23 @@ application or passing all security gates.
   unexpected failure returns a correlation ID without exposing exception text.
 - Timeout tests terminate stalled read and report child processes, preserve
   cancellation, and verify before-write and after-write reconciliation.
-  The six browser tests pass with the supervised production worker.
+  The standard browser tests pass with the supervised production worker.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
 
-Remote CI passed all three jobs for the security review (`0406ebc`).
+Remote CI passed all three jobs for task history export (`28d7c73`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
-no-thinking call completed in about four seconds. An API/browser Ollama
-journey has not yet been verified.
+no-thinking call completed in about four seconds. The opt-in browser plan
+journey passed in 22 seconds with the same installed model. Execution of a
+model-generated plan remains unverified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `0406ebc` (local security
-review). Per-task history export is locally tested and pending commit.
+Latest pushed commit before this checkpoint: `28d7c73` (per-task history
+export). The opt-in Ollama browser test and documentation are pending commit.
 
 ## Known risks
 
@@ -179,5 +186,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push per-task history export, then verify remote CI. Continue with
-clean-checkout setup, manual accessibility and performance gates.
+Commit and push the opt-in Ollama browser test. Clean-checkout install is
+blocked on uncached package downloads pending approval; continue with manual
+accessibility and performance gates.

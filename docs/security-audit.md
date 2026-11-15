@@ -23,6 +23,7 @@ artifact path, size and digest verification; journal and API error redaction;
 retry keys, lease recovery, write reconciliation and process timeouts. The
 model can propose a plan, but a human still reviews it before execution.
 
-Manual keyboard and assistive technology review, clean-checkout install,
-performance measurements and a real browser Ollama journey remain release
-gates. Automated WCAG A/AA checks pass on the five tested core views.
+Manual keyboard and assistive technology review, clean-checkout install and
+performance measurements remain release gates. An installed local Ollama
+model generated a reviewable plan in the opt-in browser test. Automated
+WCAG A/AA checks pass on the five tested core views.

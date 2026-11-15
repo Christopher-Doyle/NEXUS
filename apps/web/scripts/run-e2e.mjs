@@ -12,7 +12,7 @@ if (!existsSync(python)) throw new Error(`Python environment not found: ${python
 const tempBase = realpathSync(tmpdir())
 const tempRoot = mkdtempSync(join(tempBase, 'nexus-e2e-'))
 const database = join(tempRoot, 'nexus.db').replaceAll('\\', '/')
-const env = { ...process.env, DATABASE_URL: `sqlite:///${database}`, DATA_DIR: tempRoot, OLLAMA_MODEL: '', APPROVED_WORKSPACES: '', DEMO_MODE: 'true' }
+const env = { ...process.env, DATABASE_URL: `sqlite:///${database}`, DATA_DIR: tempRoot, OLLAMA_MODEL: process.env.NEXUS_E2E_OLLAMA_MODEL || '', APPROVED_WORKSPACES: '', DEMO_MODE: 'true' }
 const children = []
 
 function start(command, args, cwd) {

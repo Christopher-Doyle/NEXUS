@@ -64,6 +64,18 @@ test('mobile settings remain usable and persist a deadline', async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
 
+test('installed local Ollama model generates a reviewable plan', async ({ page }) => {
+  test.skip(!process.env.NEXUS_E2E_OLLAMA_MODEL, 'Opt in with an already installed local model')
+  test.setTimeout(180_000)
+  await page.goto('/tasks/new')
+  await page.getByRole('button', { name: 'Create task' }).click()
+  await page.getByLabel('Planning mode').selectOption('ollama')
+  await page.getByRole('button', { name: 'Generate plan' }).click()
+  await expect(page.getByRole('status')).toHaveText('Plan generated.', { timeout: 170_000 })
+  await expect(page.getByRole('button', { name: 'Start approved plan' })).toBeEnabled()
+  expect(await page.locator('.step-card').count()).toBeGreaterThan(0)
+})
+
 for (const path of ['/', '/tasks/new', '/settings']) {
   test(`core page ${path} has no automated WCAG A or AA findings`, async ({ page }) => {
     await page.goto(path)

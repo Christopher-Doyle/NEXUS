@@ -16,7 +16,7 @@
 
 ## Overview
 
-NEXUS is a local personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. The working demo uses a permission-gated file reader, local text search, and Markdown report writer. Ollama planning is optional; the adapter has been verified with an installed local `qwen3.5:9b` model, while the browser journey remains to be tested.
+NEXUS is a local personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. The working demo uses a permission-gated file reader, local text search, and Markdown report writer. Ollama planning is optional; the installed local `qwen3.5:9b` model generated a reviewable plan through the browser in an opt-in integration test.
 
 
 ---

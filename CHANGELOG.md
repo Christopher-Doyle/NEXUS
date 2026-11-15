@@ -15,6 +15,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   rejected requests for unavailable network tools.
 - Added per-task JSON history export from the History page, covering task
   metadata, bounded journal, execution receipts and artifact metadata.
+- Verified the installed local Ollama model through the browser plan-review
+  workflow with an opt-in integration test.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.
