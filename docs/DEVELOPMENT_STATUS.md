@@ -14,7 +14,7 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Implemented
 
-- FastAPI and React/Vite local application with five explicit database migrations.
+- FastAPI and React/Vite local application with six explicit database migrations.
 - Task creation with constraints, bounded text attachments or an approved local
   folder; deterministic plan generation, editing, version checks and state transitions.
 - Optional Ollama planning with structured JSON, local endpoint restriction,
@@ -39,11 +39,14 @@ number does not imply a 60% complete release or passing security gates.
 - Confirmed deletion of inactive tasks removes their database journal,
   execution records, NEXUS-owned inputs and artifacts. External approved
   workspaces are excluded from cleanup.
+- Local settings page persists the chosen Ollama model, planning timeout and
+  task dispatch deadline. Operator-approved workspace paths and the loopback
+  endpoint remain environment-only.
 
 ## Incomplete
 
-- No outbound network fetch tool, general document parsers or
-  settings UI. Network access remains unused and off in the web client.
+- No outbound network fetch tool or general document parsers. Network access
+  remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
   per task. The new deadline stops future tool dispatch, but does not kill an
@@ -59,8 +62,8 @@ number does not imply a 60% complete release or passing security gates.
 
 ## Checks executed
 
-- `uv run alembic upgrade head`: five migrations applied locally.
-- `python -m pytest -q`: 34 backend tests passed, two symlink tests skipped on
+- `uv run alembic upgrade head`: six migrations applied locally.
+- `python -m pytest -q`: 35 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -82,8 +85,10 @@ number does not imply a 60% complete release or passing security gates.
   unavailable here; Linux CI will exercise them.
 - Retention test: exact confirmation and inactive-state checks; deletion of
   task records, inputs and artifacts leaves the selected external workspace intact.
+- Settings test: preferences persist and a newly started task receives the
+  configured deadline.
 
-Remote CI passed for the Ollama adapter (`5442ed7`). Ollama is installed with
+Remote CI passed for task deletion (`d68d821`). Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
@@ -92,8 +97,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `5442ed7` (Ollama adapter).
-Task deletion: commit and push pending.
+Latest pushed commit before this checkpoint: `d68d821` (confirmed task deletion).
+Settings interface: commit and push pending.
 
 ## Known risks
 
@@ -105,6 +110,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push confirmed task deletion. Then add a local settings interface,
-review API errors and rate limiting, and complete the remaining P0 acceptance
+Commit and push the settings interface. Then review API errors and rate
+limiting, and complete the remaining P0 acceptance
 checks and reproducible browser tests.

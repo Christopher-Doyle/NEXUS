@@ -16,6 +16,7 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
 | GET | `/api/v1/model/status` | Check configured local Ollama model |
+| GET/PATCH | `/api/v1/settings` | Read and update local model and timeout preferences |
 | GET | `/api/v1/worker/status` | Recent worker heartbeat and active process count |
 | POST | `/api/v1/tasks/{id}/start` | Queue a reviewed plan |
 | POST | `/api/v1/tasks/{id}/pause` | Pause after the current step |
@@ -46,3 +47,7 @@ can add the step during plan review and provide the literal search text.
 `DELETE /tasks/{id}` requires `{"confirm_id":"<same task ID>"}` and returns
 204. Active tasks must be cancelled before deletion. Selected external
 workspaces are not deleted.
+
+`PATCH /settings` accepts `ollama_model`, `ollama_timeout_seconds` (10–180),
+and `task_timeout_seconds` (60–86400). Values persist in SQLite. Workspace
+grants and the Ollama endpoint remain operator environment settings.

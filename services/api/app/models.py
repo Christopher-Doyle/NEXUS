@@ -116,3 +116,10 @@ class WorkerHeartbeat(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class AppSetting(Base):
+    __tablename__ = "app_setting"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(String(256))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)

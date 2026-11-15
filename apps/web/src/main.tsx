@@ -6,6 +6,7 @@ import { api, type Step, type TaskDraft } from './api'
 import { Artifacts } from './Artifacts'
 import { Cockpit } from './Cockpit'
 import { History } from './History'
+import { Settings } from './Settings'
 import './styles.css'
 
 const queryClient = new QueryClient()
@@ -88,6 +89,6 @@ function PlanReview() {
   </main>
 }
 
-function App() { return <div className="app-shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><nav aria-label="Primary navigation"><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link><Link to="/history">History</Link><Link to="/artifacts">Artifacts</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div></aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /><Route path="/artifacts" element={<Artifacts />} /></Routes></div> }
+function App() { return <div className="app-shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><nav aria-label="Primary navigation"><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link><Link to="/history">History</Link><Link to="/artifacts">Artifacts</Link><Link to="/settings">Settings</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div></aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /><Route path="/artifacts" element={<Artifacts />} /><Route path="/settings" element={<Settings />} /></Routes></div> }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>)

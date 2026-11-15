@@ -39,3 +39,6 @@ The optional adapter has been verified locally with `qwen3.5:9b`. It disables
 thinking for structured plans and caps generation at 1024 tokens. The model
 must already be installed; NEXUS does not download one.
 `TASK_TIMEOUT_SECONDS` sets the task dispatch deadline (default: 3600 seconds).
+The Settings page can override the model name and both timeouts in SQLite.
+`APPROVED_WORKSPACES`, `DATA_DIR`, and `OLLAMA_ENDPOINT` remain operator-only
+environment settings. Run `alembic upgrade head` before using the updated UI.

@@ -25,6 +25,7 @@ from app.db import begin_write, get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
+from app.preferences import effective_settings
 from app.registry import REGISTRY
 from app.retention import RetentionError, delete_task
 from app.state import TRANSITIONS, transition
@@ -183,7 +184,8 @@ def plan_task(task_id: str, db: DbSession, body: PlanRequest | None = None) -> T
     try:
         if body is not None and body.mode == "ollama":
             settings = get_settings()
-            steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, settings.ollama_model, settings.ollama_timeout_seconds)
+            preferences = effective_settings(db)
+            steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, preferences.ollama_model, preferences.ollama_timeout_seconds)
         else:
             steps = validate_steps(demo_plan(capabilities, json.loads(task.input_files_json)), capabilities)
     except ModelUnavailable as exc:
@@ -220,7 +222,7 @@ def start_task(task_id: str, db: DbSession) -> TaskView:
     task = get_task(db, task_id)
     if task.state != "review_required" or not task.steps:
         raise HTTPException(status_code=409, detail="A reviewed plan is required before starting")
-    task.deadline_at = utc_now() + timedelta(seconds=get_settings().task_timeout_seconds)
+    task.deadline_at = utc_now() + timedelta(seconds=effective_settings(db).task_timeout_seconds)
     transition(task, "queued")
     record_event(db, task.id, "task_state", {"state": task.state})
     db.commit()

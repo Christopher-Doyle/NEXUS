@@ -14,11 +14,14 @@ from app.db import engine, get_db
 from app.models import WorkerHeartbeat, utc_now
 from app.ollama import model_status
 from app.operations import router as operations_router
+from app.preferences import effective_settings
+from app.preferences import router as preferences_router
 from app.tasks import router as tasks_router
 
 app = FastAPI(title="NEXUS API", version="0.1.0")
 app.include_router(tasks_router)
 app.include_router(operations_router)
+app.include_router(preferences_router)
 
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 LOCAL_ORIGINS = {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:8765", "http://localhost:8765"}
@@ -69,9 +72,9 @@ def ready() -> Health:
 
 
 @app.get("/api/v1/model/status")
-def local_model_status() -> dict:
+def local_model_status(db: Annotated[Session, Depends(get_db)]) -> dict:
     settings = get_settings()
-    return model_status(settings.ollama_endpoint, settings.ollama_model)
+    return model_status(settings.ollama_endpoint, effective_settings(db).ollama_model)
 
 
 @app.get("/api/v1/worker/status")

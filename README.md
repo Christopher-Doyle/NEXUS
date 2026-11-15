@@ -23,7 +23,7 @@ NEXUS is a local personal AI operations console: users define an objective, revi
 
 ## Project status
 
-> **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads and searches selected local text files, requests approval before writing a report, and records artifacts and events. Inactive tasks can be deleted with exact confirmation. This is an early MVP with documented limits. See [development status](docs/DEVELOPMENT_STATUS.md), [security boundaries](docs/security.md), and [local setup](docs/development.md).
+> **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads and searches selected local text files, requests approval before writing a report, and records artifacts and events. Inactive tasks can be deleted with exact confirmation; local model and timeout preferences can be edited in Settings. This is an early MVP with documented limits. See [development status](docs/DEVELOPMENT_STATUS.md), [security boundaries](docs/security.md), and [local setup](docs/development.md).
 
 ### Verified local demo
 

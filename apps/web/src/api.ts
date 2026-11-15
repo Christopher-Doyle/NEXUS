@@ -5,6 +5,7 @@ export type Approval = { id: string; task_id: string; step_id: string; scope_has
 export type JournalEvent = { id: number; type: string; occurred_at: string; payload: Record<string, unknown> }
 export type Artifact = { id: string; filename: string; sha256: string; size_bytes: number; media_type: string; created_at: string }
 export type ArtifactRecord = Artifact & { task_id: string; task_goal: string }
+export type LocalSettings = { ollama_model: string; ollama_timeout_seconds: number; task_timeout_seconds: number; approved_workspace_count: number; network_access_enabled: boolean }
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-Nexus-Intent': 'local' }, body: body === undefined ? undefined : JSON.stringify(body) })
@@ -31,6 +32,8 @@ export const api = {
   planTask: (id: string, mode: 'demo' | 'ollama') => request<Task>(`/tasks/${id}/plan`, 'POST', { mode }),
   modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
   workerStatus: () => request<{ active: boolean; active_count: number; last_seen_at: string | null }>('/worker/status'),
+  settings: () => request<LocalSettings>('/settings'),
+  updateSettings: (changes: Pick<LocalSettings, 'ollama_model' | 'ollama_timeout_seconds' | 'task_timeout_seconds'>) => request<LocalSettings>('/settings', 'PATCH', changes),
   editPlan: (task: Task, steps: Step[]) => request<Task>(`/tasks/${task.id}/steps`, 'PATCH', { plan_version: task.plan_version, steps: steps.map(({ description, tool_name, args, dependencies }) => ({ description, tool_name, args, dependencies })) }),
   startTask: (id: string) => request<Task>(`/tasks/${id}/start`, 'POST'),
   cancelTask: (id: string) => request<Task>(`/tasks/${id}/cancel`, 'POST'),

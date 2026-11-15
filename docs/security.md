@@ -42,3 +42,7 @@ for inactive tasks. It removes task records, execution journals, and NEXUS-owned
 input and artifact directories. The selected external workspace is never a
 deletion target. Cleanup stages owned directories under the app data root;
 failure after database deletion is reported for operator cleanup.
+
+The settings UI can change only the local model name and two bounded timeouts.
+It cannot expand workspace grants, enable network tools or change the loopback
+endpoint. Those boundaries remain in the operator's environment configuration.
