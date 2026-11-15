@@ -105,7 +105,7 @@ application or passing all security gates.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 80 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 81 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -165,7 +165,8 @@ application or passing all security gates.
   task records, inputs and artifacts leaves the selected external workspace intact.
 - Age-based retention test: default zero preserves data; enabling 30 days
   removes an old completed task and its owned report while preserving a recent
-  task, an old draft and the selected external workspace.
+  task, an old draft and the selected external workspace. A worker-startup
+  integration test confirms the saved retention choice triggers pruning.
 - Settings test: preferences persist and a newly started task receives the
   configured deadline.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
@@ -182,7 +183,7 @@ application or passing all security gates.
   1.16/1.44/1.60 ms. Ten synthetic task creates measured 3.59/5.17/15.97 ms.
   These are one-host smoke timings, not throughput or capacity claims.
 
-Remote CI passed all three jobs for the latency checkpoint (`e748d2a`).
+Remote CI passed all three jobs for opt-in retention (`5637b05`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -196,8 +197,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `e748d2a` (loopback latency
-measurement). Opt-in age-based retention is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `5637b05` (opt-in retention).
+The worker-startup retention integration test is pending commit.
 
 ## Known risks
 
@@ -210,5 +211,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push opt-in retention, then verify remote CI. Continue with manual
-assistive technology review and load/capacity testing before a stable release.
+Commit and push the worker-startup retention integration test. Continue with
+manual assistive technology review and load/capacity testing before a stable
+release.

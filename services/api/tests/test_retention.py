@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, get_db, make_engine
 from app.main import app
-from app.models import Approval, Artifact, Event, Execution, PlanStep, Task, utc_now
+from app.models import Approval, AppSetting, Artifact, Event, Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.retention import RetentionError, prune_old_tasks, task_owned_dir
 
@@ -113,4 +113,33 @@ def test_opt_in_retention_prunes_only_old_terminal_tasks(tmp_path) -> None:
         assert db.get(Task, draft.id) is not None
         assert not owned.exists()
         assert (external / "keep.md").read_text(encoding="utf-8") == "Keep"
+    engine.dispose()
+
+
+def test_worker_applies_opt_in_retention_on_startup(tmp_path, monkeypatch) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'worker-retention.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        old = Task(goal="Expired completed task", state="completed", completed_at=utc_now() - timedelta(days=40))
+        db.add_all([old, AppSetting(key="retention_days", value="30")])
+        db.commit()
+        old_id = old.id
+
+    monkeypatch.setattr("app.worker.SessionLocal", factory)
+    monkeypatch.setattr("app.worker.get_settings", lambda: type("Settings", (), {"data_dir": str(tmp_path / "data")})())
+
+    class EndLoop(Exception):
+        pass
+
+    def stop_after_first_cycle(_seconds: float) -> None:
+        raise EndLoop
+
+    monkeypatch.setattr("app.worker.time.sleep", stop_after_first_cycle)
+    from app.worker import main as worker_main
+
+    with pytest.raises(EndLoop):
+        worker_main()
+    with factory() as db:
+        assert db.get(Task, old_id) is None
     engine.dispose()
