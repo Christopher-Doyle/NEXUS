@@ -40,6 +40,12 @@ recommended development setup while broader recovery behavior is verified.
 An additional test kills a worker after the report reaches disk but before
 its database transaction commits. Recovery preserves the single file and
 execution receipt and marks the step for review.
+The recovery endpoint reconstructs the expected report from stored read
+receipts and accepts an existing file only when its SHA-256 matches exactly.
+It rejects stale inspection digests, mismatched content, redirected paths and
+duplicate artifact records. An absent file may be acknowledged; it is never
+silently rewritten. Further steps after a recovered report do not resume
+automatically.
 
 Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.

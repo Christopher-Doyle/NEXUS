@@ -11,7 +11,7 @@ it does not mean the v1 release gate has passed.
 | NX-F03 | Verified baseline | Registry schemas, capability grant and argument hash are checked at dispatch; invalid output is rejected. |
 | NX-F04 | Verified baseline | File writes require exact approval. Outbound fetch remains disabled until SSRF controls are complete. |
 | NX-F05 | Partial | SSE, task states, journal, search excerpts and artifact links work; accessible operational detail and full tool receipts still need review. |
-| NX-F06 | Partial | Journal, leases, safe read replay after a real worker kill, bounded attempts and uncertain-write stop are tested; manual resolution workflow remains. |
+| NX-F06 | Partial | Journal, leases, safe read replay after a real worker kill, bounded attempts and uncertain-write stop are tested. The recovery API and cockpit can verify and accept an existing report or confirm absence; complete resumed multi-step workflow acceptance remains. |
 | NX-F07 | Verified baseline | Downloaded Markdown reports include numbered source citations, line ranges and SHA-256 snapshots. A tampered read receipt prevents report creation; browser and backend tests cover export. Semantic claims are not independently verified. |
 | NX-N01 | Verified baseline | Registry contains no shell tool and tool grants are checked server-side. |
 | NX-N02 | Verified baseline | Executions carry stable unique keys; a killed worker after report file creation leaves one file and one execution, and recovery stops for review without replaying the write. Safe reads retry within a three-attempt limit. |

@@ -19,12 +19,14 @@ from app.operations import router as operations_router
 from app.preferences import effective_settings
 from app.preferences import router as preferences_router
 from app.rate_limit import RateLimiter
+from app.recovery import router as recovery_router
 from app.tasks import router as tasks_router
 
 app = FastAPI(title="NEXUS API", version="0.1.0")
 app.include_router(tasks_router)
 app.include_router(operations_router)
 app.include_router(preferences_router)
+app.include_router(recovery_router)
 rate_limiter = RateLimiter()
 logger = logging.getLogger("nexus.api")
 

@@ -42,6 +42,9 @@ number does not imply a 60% complete release or passing security gates.
 - Confirmed deletion of inactive tasks removes their database journal,
   execution records, NEXUS-owned inputs and artifacts. External approved
   workspaces are excluded from cleanup.
+- An uncertain report write has a recovery inspection and cockpit action.
+  The operator can accept an on-disk file only when it exactly matches the
+  report rebuilt from verified read receipts, or confirm that no file exists.
 - Local settings page persists the chosen Ollama model, planning timeout and
   task dispatch deadline. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
@@ -69,7 +72,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: six migrations applied locally.
-- `python -m pytest -q`: 37 backend tests passed, two symlink tests skipped on
+- `python -m pytest -q`: 45 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -98,6 +101,8 @@ number does not imply a 60% complete release or passing security gates.
 - Another worker process was terminated after creating a report file but
   before committing its artifact record. Recovery left one file and one
   execution and flagged the write for review without replaying it.
+- Recovery API tests cover exact-match acceptance, stale digest rejection,
+  absent-file acknowledgement and mismatched-file refusal.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -108,7 +113,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for killed-read recovery (`1667fc3`).
+Remote CI passed all three jobs for killed-write idempotency (`4a96034`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -118,8 +123,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `1667fc3` (killed-read
-recovery). Killed-write idempotency test: commit and push pending.
+Latest pushed commit before this checkpoint: `4a96034` (killed-write
+idempotency). Manual report recovery: commit and push pending.
 
 ## Known risks
 
@@ -131,5 +136,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push the killed-write idempotency test in CI. Then build the
-uncertain-write manual resolution workflow.
+Verify and push manual report recovery in CI. Then complete F05 operational
+receipts and F06 resume acceptance checks.

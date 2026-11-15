@@ -23,6 +23,9 @@ one registered tool and typed arguments. The worker claims a queued task with
 records the execution. Read attempts may be retried after a lease expires,
 up to three total attempts.
 An uncertain report write stops for manual review.
+The recovery API reconstructs expected report bytes from verified read
+receipts. An operator may accept an existing byte-for-byte match or mark a
+missing report as absent; mismatched files remain blocked.
 
 `write_report` needs a one-hour approval whose scope includes task, plan
 version, step, and argument hash. Immediately before the write, the worker

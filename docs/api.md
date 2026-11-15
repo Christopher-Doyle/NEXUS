@@ -24,6 +24,8 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/cancel` | Cancel an active task |
 | GET | `/api/v1/tasks/{id}/events` | SSE event stream with cursor replay |
 | GET | `/api/v1/tasks/{id}/journal` | Bounded event history |
+| GET | `/api/v1/tasks/{id}/recovery` | Inspect an uncertain report write and compare its exact expected digest |
+| POST | `/api/v1/tasks/{id}/recovery` | Accept a matching existing report or acknowledge that no report exists |
 | GET | `/api/v1/tasks/{id}/artifacts` | Artifact metadata |
 | GET | `/api/v1/artifacts` | Paginated artifact library |
 | GET | `/api/v1/approvals` | Pending approvals |
@@ -53,3 +55,10 @@ workspaces are not deleted.
 `PATCH /settings` accepts `ollama_model`, `ollama_timeout_seconds` (10–180),
 and `task_timeout_seconds` (60–86400). Values persist in SQLite. Workspace
 grants and the Ollama endpoint remain operator environment settings.
+
+Recovery applies only to a failed task with a `needs_review` report step and
+execution. The POST body contains `step_id`, `expected_sha256` from the GET
+inspection, and `decision` (`accept_existing` or `confirm_absent`). A matching
+file is checked against the report rebuilt from verified read receipts before
+an artifact record is restored. A missing file can be acknowledged without
+retrying the write. Mismatched or redirected files cannot be accepted.

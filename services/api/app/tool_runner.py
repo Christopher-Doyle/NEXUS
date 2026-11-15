@@ -2,6 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -22,6 +23,40 @@ def artifact_dir(data_dir: str, task_id: str) -> Path:
     if root.resolve() != root:
         raise ToolDenied("Task artifact directory is redirected")
     return root
+
+
+def report_bytes(db: Session, task: Task) -> bytes:
+    if not task.workspace_path:
+        raise ToolDenied("No workspace is configured for this task")
+    readings = []
+    for source_step in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id, PlanStep.tool_name == "read_file").order_by(PlanStep.ordinal)):
+        execution = db.scalar(select(Execution).where(Execution.step_id == source_step.id, Execution.status == "completed"))
+        if execution is None or execution.result_json is None:
+            raise ToolDenied("Source readings are incomplete")
+        try:
+            reading = REGISTRY["read_file"].output.model_validate_json(execution.result_json).model_dump()
+            source_path = REGISTRY["read_file"].parameters.model_validate_json(source_step.args_json).path
+        except ValidationError as exc:
+            raise ToolDenied("Source reading receipt is invalid") from exc
+        if reading["source"] != Path(source_path).name or hashlib.sha256(reading["content"].encode("utf-8")).hexdigest() != reading["sha256"]:
+            raise ToolDenied("Source reading provenance is invalid")
+        reading["path"] = source_path
+        readings.append(reading)
+    if not readings:
+        raise ToolDenied("A report requires at least one source reading")
+    lines = [f"# Report: {task.goal}", "", "Generated from local source files. The text below is extracted evidence, not a model-verified conclusion.", ""]
+    for number, reading in enumerate(readings, start=1):
+        quoted_content = "\n".join(f"> {line}" for line in reading["content"].splitlines())
+        lines += [f"## Source [{number}]: {json.dumps(reading['path'])}", "", quoted_content, ""]
+    lines += ["## Citations", "", "Each citation identifies the exact text snapshot used above. Verify the SHA-256 against the source content in the task journal.", ""]
+    for number, reading in enumerate(readings, start=1):
+        line_count = len(reading["content"].splitlines())
+        location = f"lines 1–{line_count}" if line_count else "empty file"
+        lines.append(f"[{number}] {json.dumps(reading['path'])}, {location}, SHA-256 `{reading['sha256']}`.")
+    data = "\n".join(lines).encode("utf-8")
+    if len(data) > REGISTRY["write_report"].resource_limits["report_bytes"]:
+        raise ToolDenied("Report exceeds the registered size limit")
+    return data
 
 
 def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
@@ -48,34 +83,7 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
                         return {"query": query, "matches": matches, "truncated": True}
         return {"query": query, "matches": matches, "truncated": False}
     if step.tool_name == "write_report":
-        if not task.workspace_path:
-            raise ToolDenied("No workspace is configured for this task")
-        readings = []
-        for source_step in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id, PlanStep.tool_name == "read_file").order_by(PlanStep.ordinal)):
-            execution = db.scalar(select(Execution).where(Execution.step_id == source_step.id, Execution.status == "completed"))
-            if execution is None or execution.result_json is None:
-                raise ToolDenied("Source readings are incomplete")
-            reading = json.loads(execution.result_json)
-            source_path = json.loads(source_step.args_json)["path"]
-            if reading["source"] != Path(source_path).name or hashlib.sha256(reading["content"].encode("utf-8")).hexdigest() != reading["sha256"]:
-                raise ToolDenied("Source reading provenance is invalid")
-            reading["path"] = source_path
-            readings.append(reading)
-        if not readings:
-            raise ToolDenied("A report requires at least one source reading")
-        lines = [f"# Report: {task.goal}", "", "Generated from local source files. The text below is extracted evidence, not a model-verified conclusion.", ""]
-        for number, reading in enumerate(readings, start=1):
-            quoted_content = "\n".join(f"> {line}" for line in reading["content"].splitlines())
-            lines += [f"## Source [{number}]: {json.dumps(reading['path'])}", "", quoted_content, ""]
-        lines += ["## Citations", "", "Each citation identifies the exact text snapshot used above. Verify the SHA-256 against the source content in the task journal.", ""]
-        for number, reading in enumerate(readings, start=1):
-            line_count = len(reading["content"].splitlines())
-            location = f"lines 1–{line_count}" if line_count else "empty file"
-            lines.append(f"[{number}] {json.dumps(reading['path'])}, {location}, SHA-256 `{reading['sha256']}`.")
-        content = "\n".join(lines)
-        data = content.encode("utf-8")
-        if len(data) > REGISTRY["write_report"].resource_limits["report_bytes"]:
-            raise ToolDenied("Report exceeds the registered size limit")
+        data = report_bytes(db, task)
         root = artifact_dir(get_settings().data_dir, task.id)
         target = root / args["filename"]
         try:
