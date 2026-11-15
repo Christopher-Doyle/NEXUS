@@ -12,10 +12,10 @@ it does not mean the v1 release gate has passed.
 | NX-F04 | Verified baseline | File writes require exact approval. Outbound fetch remains disabled until SSRF controls are complete. |
 | NX-F05 | Partial | SSE, task states, journal, search excerpts and artifact links work; accessible operational detail and full tool receipts still need review. |
 | NX-F06 | Partial | Journal, leases, safe read replay and uncertain-write stop are tested; crash-kill and manual resolution workflow remain. |
-| NX-F07 | Partial | A Markdown report downloads with source headings and hashes; explicit citation export and provenance validation remain. |
+| NX-F07 | Verified baseline | Downloaded Markdown reports include numbered source citations, line ranges and SHA-256 snapshots. A tampered read receipt prevents report creation; browser and backend tests cover export. Semantic claims are not independently verified. |
 | NX-N01 | Verified baseline | Registry contains no shell tool and tool grants are checked server-side. |
 | NX-N02 | Partial | Executions have stable keys and exclusive report creation; duplicate external-action and recovery acceptance tests remain. |
 | NX-N03 | Verified baseline | Synthetic fixture demo runs without an LLM, including automated approval and rejection browser tests. |
 
-**Measured baseline:** 6 of 10 P0 IDs, or **60%**. Release readiness is lower:
+**Measured baseline:** 7 of 10 P0 IDs, or **70%**. Release readiness is lower:
 security, accessibility, clean-clone and documentation gates are still open.

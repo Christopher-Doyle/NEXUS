@@ -1,3 +1,5 @@
+import hashlib
+import json
 import time
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
@@ -7,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, begin_write, get_db, make_engine
@@ -80,7 +83,14 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert client.get(f"/api/v1/tasks/{task_id}").json()["state"] == "completed"
         report = (tmp_path / "artifacts" / task_id / "project-report.md")
         assert report.exists()
-        assert "Atlas" in report.read_text(encoding="utf-8")
+        report_text = report.read_text(encoding="utf-8")
+        assert "Atlas" in report_text
+        assert "## Citations" in report_text
+        for number, name in enumerate(("brief.md", "meeting.md"), start=1):
+            source = (DEMO_WORKSPACE / name).read_text(encoding="utf-8")
+            digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+            assert f"## Source [{number}]: \"{name}\"" in report_text
+            assert f"[{number}] \"{name}\", lines 1–{len(source.splitlines())}, SHA-256 `{digest}`." in report_text
         artifacts = client.get(f"/api/v1/tasks/{task_id}/artifacts").json()
         assert len(artifacts) == 1
         library = client.get("/api/v1/artifacts").json()
@@ -90,6 +100,25 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert any(event["type"] == "step_completed" for event in client.get(f"/api/v1/tasks/{task_id}/journal").json())
         with factory() as db:
             assert not run_once(db)
+
+        tampered_task = client.post("/api/v1/tasks", headers=headers, json={"goal": "Reject a corrupt source receipt"}).json()["id"]
+        client.post(f"/api/v1/tasks/{tampered_task}/plan", headers=headers)
+        client.post(f"/api/v1/tasks/{tampered_task}/start", headers=headers)
+        for _ in range(3):
+            with factory() as db:
+                assert run_once(db)
+        with factory.begin() as db:
+            read_step = db.scalar(select(PlanStep).where(PlanStep.task_id == tampered_task, PlanStep.tool_name == "read_file"))
+            execution = db.scalar(select(Execution).where(Execution.step_id == read_step.id))
+            receipt = json.loads(execution.result_json)
+            receipt["content"] = "Altered after the read"
+            execution.result_json = json.dumps(receipt)
+        tampered_approval = next(item for item in client.get("/api/v1/approvals").json() if item["task_id"] == tampered_task)
+        client.post(f"/api/v1/approvals/{tampered_approval['id']}/decision", headers=headers, json={"decision": "approved", "scope_hash": tampered_approval["scope_hash"]})
+        with factory() as db:
+            assert run_once(db)
+        assert client.get(f"/api/v1/tasks/{tampered_task}").json()["state"] == "failed"
+        assert client.get(f"/api/v1/tasks/{tampered_task}/artifacts").json() == []
 
         rejected_task = client.post("/api/v1/tasks", headers=headers, json={"goal": "Reject a sample report"}).json()["id"]
         client.post(f"/api/v1/tasks/{rejected_task}/plan", headers=headers)

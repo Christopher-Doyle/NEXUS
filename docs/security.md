@@ -23,6 +23,11 @@ Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file
 and records its SHA-256 digest. Artifact directories reject symlink redirection.
 Downloads recheck the artifact path and digest.
+Report citations name each local source and its line range and SHA-256 content
+snapshot. Before writing, the worker recomputes the digest of each stored read
+receipt and checks its source name against the plan step. A changed source
+file after the read does not alter that snapshot; citations are evidence
+references, not a verification of the source's claims.
 The worker acquires a SQLite write lock before the final report action and
 rechecks task state and approval. A cancellation acknowledged before that
 boundary prevents the write; a cancellation requested during the write waits

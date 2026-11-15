@@ -7,8 +7,8 @@ remain open for broader requirements. Milestone 7 is underway; Milestone 8
 is not release-ready.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
-through NX-N03. Six have verified baseline behavior (NX-F01, F02, F03, F04,
-N01, N03), so functional P0 progress is **6/10 = 60%**. F05, F06, F07 and N02
+through NX-N03. Seven have verified baseline behavior (NX-F01, F02, F03, F04,
+F07, N01, N03), so functional P0 progress is **7/10 = 70%**. F05, F06 and N02
 are partially implemented and need their remaining acceptance checks. This
 number does not imply a 60% complete release or passing security gates.
 
@@ -28,6 +28,8 @@ number does not imply a 60% complete release or passing security gates.
   Worker responses are schema-checked and size-bounded before persistence.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
+- Exported Markdown reports include numbered source citations, line ranges
+  and content hashes. A mismatched stored read receipt blocks the write.
 - Worker heartbeat with a 10-second liveness window and dashboard status.
 - A configurable one-hour default task dispatch deadline is stored with each
   started task. Expired queued, paused and approval-waiting tasks fail before
@@ -85,6 +87,9 @@ number does not imply a 60% complete release or passing security gates.
 - Report cancellation race tests: a cancellation committed before the write
   boundary prevents output; a cancellation during a locked write waits and
   receives a conflict after the task completes.
+- Report export test: source citations include line ranges and verified read
+  hashes; a tampered read receipt prevents an artifact. Browser E2E checks
+  the downloaded report contains its citation section.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -95,8 +100,8 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed through API error handling and rate limits (`83d57ac`).
-The new browser CI job is pending push and remote verification. Ollama is installed with
+Remote CI passed all three jobs for the isolated browser demo (`7e52681`).
+Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
@@ -105,9 +110,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `83d57ac` (API error handling
-and rate limits). Isolated browser demo and P0 traceability: commit and push
-pending.
+Latest pushed commit before this checkpoint: `7e52681` (isolated browser
+demo and P0 traceability). Citation export: commit and push pending.
 
 ## Known risks
 
@@ -119,5 +123,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push the isolated browser demo in CI. Then complete the remaining
-P0 acceptance checks, starting with explicit report citations and recovery.
+Verify and push citation export in CI. Then complete the remaining P0
+acceptance checks, starting with worker recovery and manual resolution.
