@@ -77,7 +77,7 @@ test('task form is operable in keyboard focus order', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Review the steps.' })).toBeVisible()
 })
 
-test('installed local Ollama model generates a reviewable plan', async ({ page }) => {
+test('installed local Ollama model runs a reviewed plan', async ({ page }) => {
   test.skip(!process.env.NEXUS_E2E_OLLAMA_MODEL, 'Opt in with an already installed local model')
   test.setTimeout(180_000)
   await page.goto('/tasks/new')
@@ -87,6 +87,11 @@ test('installed local Ollama model generates a reviewable plan', async ({ page }
   await expect(page.getByRole('status')).toHaveText('Plan generated.', { timeout: 170_000 })
   await expect(page.getByRole('button', { name: 'Start approved plan' })).toBeEnabled()
   expect(await page.locator('.step-card').count()).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'Start approved plan' }).click()
+  const approval = page.getByRole('heading', { name: 'Approval required' })
+  await expect(approval.or(page.locator('.cockpit-head .chip').filter({ hasText: 'completed' }))).toBeVisible({ timeout: 60_000 })
+  if (await approval.isVisible()) await page.getByRole('button', { name: 'Approve write' }).click()
+  await expect(page.locator('.cockpit-head .chip')).toHaveText('completed', { timeout: 60_000 })
 })
 
 for (const path of ['/', '/tasks/new', '/settings']) {

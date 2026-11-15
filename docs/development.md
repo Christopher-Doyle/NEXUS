@@ -57,7 +57,7 @@ The browser suite includes automated WCAG A/AA checks through the reviewed
 open-source `@axe-core/playwright` development dependency. Automated checks
 do not replace keyboard and assistive technology review.
 
-To exercise Ollama planning through the browser with an already installed
+To exercise Ollama planning and execution through the browser with an already installed
 model, set `NEXUS_E2E_OLLAMA_MODEL` to its local name before running
 `npm run test:e2e`. The regular suite leaves the model unset and skips this
 optional case. The runner never downloads a model.

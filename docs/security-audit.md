@@ -27,6 +27,7 @@ Manual assistive technology review and performance measurements remain
 release gates. An automated keyboard focus and submission path passed for the
 task form. A separately cloned checkout installed lockfile
 dependencies, applied seven migrations and passed backend, frontend and
-browser checks. An installed local Ollama
-model generated a reviewable plan in the opt-in browser test. Automated
+browser checks. An installed local Ollama model completed a reviewable plan,
+supervised execution and report approval in the opt-in browser test. Model
+read paths are checked against selected inputs before review. Automated
 WCAG A/AA checks pass on the five tested core views.

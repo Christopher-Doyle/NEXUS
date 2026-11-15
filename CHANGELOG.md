@@ -15,8 +15,9 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   rejected requests for unavailable network tools.
 - Added per-task JSON history export from the History page, covering task
   metadata, bounded journal, execution receipts and artifact metadata.
-- Verified the installed local Ollama model through the browser plan-review
-  workflow with an opt-in integration test.
+- Verified the installed local Ollama model through browser plan review,
+  supervised execution and report approval. Plans now use the task's exact
+  selected filenames and reject invented read paths before review.
 - Capped mutation request bodies at 512 KiB before parsing and fixed a
   report test that assumed a particular checkout line-ending convention.
 - Verified task-form keyboard focus order and Enter submission in the browser

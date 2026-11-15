@@ -102,7 +102,7 @@ application or passing all security gates.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 77 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 79 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -114,8 +114,9 @@ application or passing all security gates.
   plan reorder buttons' accessible names.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
-- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all seven browser tests passed;
-  the installed model generated a reviewable plan through the task form.
+- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all eight browser tests passed;
+  the installed model generated a plan, the supervised worker executed it,
+  the report write was approved and the task completed.
 - The browser flow downloads a per-task JSON history export and checks its
   task state, journal, report execution receipt and artifact metadata.
 - `npm audit`: zero vulnerabilities after updating Vitest.
@@ -169,19 +170,22 @@ application or passing all security gates.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
 
-Remote CI passed all three jobs for the request-size checkpoint (`13e1643`).
+Remote CI passed all three jobs for the keyboard checkpoint (`1ca62ec`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
 no-thinking call completed in about four seconds. The opt-in browser plan
 journey passed in 22 seconds with the same installed model. Execution of a
-model-generated plan remains unverified.
+model-generated plan now completes in the opt-in browser workflow after the
+planner was constrained to the task's actual selected filenames. The first
+full run exposed a hallucinated read path; that validation was added and the
+next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `13e1643` (request body limit and
-line-ending-independent report test). Clean-checkout verification is complete.
+Latest pushed commit before this checkpoint: `1ca62ec` (keyboard task path).
+The Ollama input-scope fix and full-workflow test are pending commit.
 
 ## Known risks
 
@@ -194,5 +198,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit the keyboard navigation check and continue with manual assistive
-technology and performance release gates.
+Commit and push the Ollama input-scope fix with its full-workflow test. Then
+continue with manual assistive technology and performance release gates.

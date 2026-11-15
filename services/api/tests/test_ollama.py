@@ -58,6 +58,52 @@ def test_ollama_rejects_unsupported_tool_after_repair(monkeypatch) -> None:
         generate_plan("Run shell", [], ["read_file"], "http://127.0.0.1:11434", "test-model")
 
 
+def test_ollama_repairs_unavailable_input_path(monkeypatch) -> None:
+    prompts = []
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def post(self, url, json):
+            prompts.append(json["prompt"])
+            path = "invented.md" if len(prompts) == 1 else "brief.md"
+            body = {"steps": [{"description": "Read selected notes", "tool_name": "read_file", "args": {"path": path}, "dependencies": []}]}
+            return httpx.Response(200, json={"response": __import__("json").dumps(body)}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr("app.ollama.httpx.Client", FakeClient)
+    steps = generate_plan("Read notes", [], ["read_file"], "http://127.0.0.1:11434", "test-model", available_files=["brief.md"])
+    assert steps[0].args["path"] == "brief.md"
+    assert len(prompts) == 2
+    assert 'Available input files: ["brief.md"]' in prompts[0]
+
+
+def test_ollama_rejects_unavailable_input_path_after_repair(monkeypatch) -> None:
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def post(self, url, json):
+            body = {"steps": [{"description": "Read invented notes", "tool_name": "read_file", "args": {"path": "invented.md"}, "dependencies": []}]}
+            return httpx.Response(200, json={"response": __import__("json").dumps(body)}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr("app.ollama.httpx.Client", FakeClient)
+    with pytest.raises(ModelPlanInvalid, match="valid permitted plan"):
+        generate_plan("Read notes", [], ["read_file"], "http://127.0.0.1:11434", "test-model", available_files=["brief.md"])
+
+
 def test_ollama_reports_bounded_planning_timeout(monkeypatch) -> None:
     class TimeoutClient:
         def __init__(self, **_kwargs):
