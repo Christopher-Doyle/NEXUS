@@ -23,8 +23,9 @@ artifact path, size and digest verification; journal and API error redaction;
 retry keys, lease recovery, write reconciliation and process timeouts. The
 model can propose a plan, but a human still reviews it before execution.
 
-Manual keyboard and assistive technology review and performance measurements
-remain release gates. A separately cloned checkout installed lockfile
+Manual assistive technology review and performance measurements remain
+release gates. An automated keyboard focus and submission path passed for the
+task form. A separately cloned checkout installed lockfile
 dependencies, applied seven migrations and passed backend, frontend and
 browser checks. An installed local Ollama
 model generated a reviewable plan in the opt-in browser test. Automated

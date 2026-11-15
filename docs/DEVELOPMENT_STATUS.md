@@ -82,7 +82,8 @@ application or passing all security gates.
 - The primary approved and rejected workflows pass isolated Playwright tests
   from a fresh migrated database. Automated WCAG A/AA checks pass on the
   dashboard, task form, settings, plan review and completed cockpit. Manual
-  keyboard and assistive technology review remain unverified. The separate
+  manual assistive technology review remains unverified. Automated keyboard
+  focus order and Enter submission pass for the task form. The separate
   clean-checkout setup and opt-in browser Ollama plan test passed.
 - The local security review documents remaining limitations. There is no
   automatic retention schedule or bulk task export UI yet.
@@ -106,11 +107,13 @@ application or passing all security gates.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
-- `npm run test:e2e`: six standard browser tests passed with installed Chrome, fresh
+- `npm run test:e2e`: seven standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
   Automated WCAG A/AA checks pass on five core views after correcting the
   plan reorder buttons' accessible names.
+- A keyboard-only task-form path verified focus order through all fields and
+  submitted with Enter to reach plan review.
 - With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all seven browser tests passed;
   the installed model generated a reviewable plan through the task form.
 - The browser flow downloads a per-task JSON history export and checks its
@@ -191,5 +194,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit the clean-checkout verification record and continue with keyboard,
-assistive technology and performance release gates.
+Commit the keyboard navigation check and continue with manual assistive
+technology and performance release gates.

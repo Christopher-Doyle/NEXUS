@@ -19,6 +19,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   workflow with an opt-in integration test.
 - Capped mutation request bodies at 512 KiB before parsing and fixed a
   report test that assumed a particular checkout line-ending convention.
+- Verified task-form keyboard focus order and Enter submission in the browser
+  suite.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.

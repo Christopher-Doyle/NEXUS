@@ -64,6 +64,19 @@ test('mobile settings remain usable and persist a deadline', async ({ page }) =>
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
 
+test('task form is operable in keyboard focus order', async ({ page }) => {
+  await page.goto('/tasks/new')
+  await page.getByLabel('Goal').focus()
+  for (const label of ['Constraints', 'Success criteria', 'Approved workspace folder', 'Supporting files']) {
+    await page.keyboard.press('Tab')
+    await expect(page.getByLabel(label, { exact: false })).toBeFocused()
+  }
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Create task' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Review the steps.' })).toBeVisible()
+})
+
 test('installed local Ollama model generates a reviewable plan', async ({ page }) => {
   test.skip(!process.env.NEXUS_E2E_OLLAMA_MODEL, 'Opt in with an already installed local model')
   test.setTimeout(180_000)
