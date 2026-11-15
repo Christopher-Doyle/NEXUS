@@ -167,7 +167,7 @@ def test_simultaneous_workers_do_not_repeat_a_leased_read(tmp_path, monkeypatch)
         with lock:
             calls += 1
         time.sleep(0.2)
-        return {"bytes": 1}
+        return {"source": "brief.md", "content": "sample", "sha256": "a" * 64}
 
     monkeypatch.setattr("app.worker.run_tool", slow_tool)
 
@@ -204,7 +204,7 @@ def test_pause_or_cancel_during_read_stops_following_step(tmp_path, monkeypatch,
     def slow_tool(_db, _task, _step):
         entered.set()
         assert release.wait(timeout=5)
-        return {"bytes": 1}
+        return {"source": "brief.md", "content": "sample", "sha256": "a" * 64}
 
     monkeypatch.setattr("app.worker.run_tool", slow_tool)
 
@@ -255,7 +255,7 @@ def test_cancel_during_report_write_waits_for_committed_result(tmp_path, monkeyp
     def slow_write(_db, _task, _step):
         entered.set()
         assert release.wait(timeout=5)
-        return {"sha256": "a" * 64}
+        return {"artifact_id": "artifact", "filename": "report.md", "sha256": "a" * 64}
 
     monkeypatch.setattr("app.worker.run_tool", slow_write)
 

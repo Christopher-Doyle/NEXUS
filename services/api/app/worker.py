@@ -4,11 +4,13 @@ import time
 from datetime import UTC, timedelta
 from uuid import uuid4
 
+from pydantic import ValidationError
 from sqlalchemy import case, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal, begin_write
 from app.models import Approval, Execution, PlanStep, Task, WorkerHeartbeat, utc_now
+from app.registry import REGISTRY
 from app.state import transition
 from app.tasks import record_event
 from app.tool_policy import ToolDenied, approval_scope, validate_invocation
@@ -53,7 +55,7 @@ def run_once(db: Session) -> bool:
         if lease is not None and lease > utc_now():
             db.commit()
             return False
-        if step.tool_name == "write_report":
+        if REGISTRY[step.tool_name].retry == "manual_review":
             step.state = "needs_review"
             transition(task, "failed")
             execution.status = "needs_review"
@@ -125,8 +127,15 @@ def run_once(db: Session) -> bool:
             db.commit()
             return True
     try:
-        result = run_tool(db, task, step)
-        execution.result_json = json.dumps(result)
+        spec = REGISTRY[step.tool_name]
+        try:
+            result = spec.output.model_validate(run_tool(db, task, step)).model_dump()
+        except ValidationError as exc:
+            raise ToolDenied("Tool output failed schema validation") from exc
+        result_json = json.dumps(result)
+        if len(result_json.encode("utf-8")) > spec.max_output_bytes:
+            raise ToolDenied("Tool output exceeds its registered limit")
+        execution.result_json = result_json
         execution.status = "completed"
         execution.ended_at = utc_now()
         step.state = "completed"
@@ -145,8 +154,8 @@ def run_once(db: Session) -> bool:
         step = db.get(PlanStep, step.id)
         task = db.get(Task, task.id)
         execution = db.get(Execution, execution.id)
-        step.state = "failed"
-        execution.status = "failed"
+        step.state = "needs_review" if step.tool_name == "write_report" else "failed"
+        execution.status = step.state
         execution.error_code = type(exc).__name__
         execution.ended_at = utc_now()
         db.flush()

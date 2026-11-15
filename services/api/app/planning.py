@@ -2,29 +2,12 @@ import hashlib
 import json
 from pathlib import Path, PureWindowsPath
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import ValidationError
 
 from app.contracts import StepInput
+from app.registry import ARG_SCHEMAS
 
 MAX_STEPS = 12
-
-
-class ReadFileArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    path: str = Field(min_length=1, max_length=240)
-
-
-class WriteReportArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    filename: str = Field(pattern=r"^[a-zA-Z0-9_-]+\.md$", max_length=100)
-
-
-class SearchLocalDocsArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    query: str = Field(min_length=2, max_length=120)
-
-
-ARG_SCHEMAS = {"read_file": ReadFileArgs, "search_local_docs": SearchLocalDocsArgs, "write_report": WriteReportArgs}
 
 
 def safe_relative_path(value: str) -> bool:

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Artifact, Execution, PlanStep, Task
+from app.registry import REGISTRY
 from app.tool_policy import ToolDenied, workspace_file
 
 
@@ -62,6 +63,8 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
             lines += [f"## {reading['source']}", "", reading["content"].strip(), "", f"Source SHA-256: `{reading['sha256']}`", ""]
         content = "\n".join(lines)
         data = content.encode("utf-8")
+        if len(data) > REGISTRY["write_report"].resource_limits["report_bytes"]:
+            raise ToolDenied("Report exceeds the registered size limit")
         root = artifact_dir(get_settings().data_dir, task.id)
         target = root / args["filename"]
         try:

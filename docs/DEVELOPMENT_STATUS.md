@@ -20,6 +20,9 @@ number does not imply a 60% complete release or passing security gates.
   bounded timeouts, one repair attempt and availability check.
 - Separate worker process with three allowlisted tools: bounded text read,
   bounded search of selected local files, and approval-gated Markdown report write.
+- Explicit registry declares each tool's version, input and output schema,
+  permission, risk, timeout, output limit, retry and idempotency behavior.
+  Worker responses are schema-checked and size-bounded before persistence.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
 - Worker heartbeat with a 10-second liveness window and dashboard status.
@@ -37,6 +40,7 @@ number does not imply a 60% complete release or passing security gates.
   per task. There is no bounded
   task wall-clock timeout. Pause/cancel during reads and cancellation at the
   report write boundary are covered by tests.
+- Tool timeouts are declared but not yet enforced as hard process deadlines.
 - The primary approved and rejected workflows passed a local browser smoke
   test. Accessibility, a clean-clone demo and real Ollama remain unverified.
 - Error handling and logging need a full security review. There is no rate
@@ -47,7 +51,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: four migrations applied locally.
-- `python -m pytest -q`: 28 backend tests passed, one symlink test skipped on
+- `python -m pytest -q`: 31 backend tests passed, one symlink test skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -68,13 +72,13 @@ number does not imply a 60% complete release or passing security gates.
   test is skipped locally because directory symlinks are unavailable here;
   Linux CI will exercise it.
 
-Remote CI passed for the two-process worker test (`d6e2c01`). A
+Remote CI passed for report cancellation serialization (`c965728`). A
 real Ollama invocation has not been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `d6e2c01` (two-process worker
-test). Report cancellation serialization: commit and push pending.
+Latest pushed commit before this checkpoint: `c965728` (report cancellation
+serialization). Registry changes: commit and push pending.
 
 ## Known risks
 
@@ -86,6 +90,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push report cancellation serialization. Then complete the
-remaining P0 acceptance checks, especially full tool metadata, retention
-controls, security review and reproducible browser tests.
+Commit and push the explicit tool registry. Then complete the remaining P0
+acceptance checks, especially execution deadlines, retention controls,
+security review and reproducible browser tests.

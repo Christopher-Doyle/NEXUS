@@ -5,7 +5,8 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from app.models import PlanStep, Task
-from app.planning import ARG_SCHEMAS, args_hash, safe_relative_path
+from app.planning import args_hash, safe_relative_path
+from app.registry import ARG_SCHEMAS
 
 
 class ToolDenied(Exception):

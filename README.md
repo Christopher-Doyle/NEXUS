@@ -6,7 +6,7 @@
 
 **AI orchestration · Python · FastAPI · React · TypeScript · Ollama**
 
-![Status](https://img.shields.io/badge/status-foundation%20in%20development-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
+![Status](https://img.shields.io/badge/status-working%20local%20demo-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
 
 [Overview](#overview) · [Features](#planned-capabilities) · [Architecture](#architecture) · [Data & APIs](#data-model-and-api-contract) · [Roadmap](#roadmap)
 
@@ -16,14 +16,14 @@
 
 ## Overview
 
-NEXUS is a proposed personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. It is designed to make agentic workflows **auditable and controllable**, rather than giving a model unrestricted access to a machine.
+NEXUS is a local personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. The working demo uses a permission-gated file reader, local text search, and Markdown report writer. Ollama planning is optional and has not yet been verified with an installed local model.
 
 
 ---
 
 ## Project status
 
-> **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads bounded local text files, requests approval before writing a report, and records artifacts and events. This is an early MVP with documented limits, not a finished v1. See [development status](docs/DEVELOPMENT_STATUS.md) and [local setup](docs/development.md).
+> **Working local demo in development** — The API persists tasks and reviewable plans. A separate worker reads and searches selected local text files, requests approval before writing a report, and records artifacts and events. This is an early MVP with documented limits. See [development status](docs/DEVELOPMENT_STATUS.md), [security boundaries](docs/security.md), and [local setup](docs/development.md).
 
 ### Verified local demo
 
@@ -60,7 +60,7 @@ rejected and produced no artifact.
 
 ## Architecture
 
-The diagram below is a **target architecture** and may evolve through documented architecture decision records (ADRs).
+The diagram below shows the current local architecture. See [architecture details](docs/architecture.md) and the [ADRs](docs/adr).
 
 ```mermaid
 flowchart LR
@@ -73,7 +73,7 @@ flowchart LR
     G -->|Approved| T[Allowlisted tool workers]
     G -->|Denied| X[Stop and report]
     T --> R[Execution receipts]
-    O --> DB[(SQLite or PostgreSQL)]
+    O --> DB[(SQLite)]
     R --> DB
     API --> DB
 ```
@@ -88,42 +88,30 @@ flowchart LR
 6. Workers return typed results and receipts, and retries respect idempotency boundaries.
 7. The console presents outputs, limitations, failures and the full execution timeline.
 
-### Proposed technology stack
+### Current technology stack
 
-| Layer | Proposed choice | Rationale |
+| Layer | Choice | Rationale |
 | --- | --- | --- |
 | UI | React + TypeScript + Vite | Fast, typed and component-driven |
 | API | Python + FastAPI + Pydantic | Typed request and tool contracts |
 | Local inference | Ollama with a compatible local model | No compulsory per-token charges |
-| Persistence | SQLite for MVP; PostgreSQL optional | Simple local setup with upgrade path |
+| Persistence | SQLite | Simple local setup with explicit migrations |
 | Async work | Durable DB-backed queue initially | Avoid unnecessary infrastructure |
 | Tests | Pytest, Vitest, Playwright | Coverage of tools, API and user flows |
 
 ## Data model and API contract
 
-The following are **draft entities and endpoint shapes** to guide implementation. They are not deployed APIs.
+The current database schema is managed by Alembic migrations. The HTTP routes
+that exist today are listed in the [API reference](docs/api.md).
 
 ### Primary data entities
 
-- `tasks`: `id`, `goal`, `status`, `created_at`, `updated_at`, `owner_id`
-- `steps`: `id`, `task_id`, `sequence`, `kind`, `status`, `retry_count`, `idempotency_key`
-- `tool_calls`: `id`, `step_id`, `tool_name`, `input_digest`, `status`, `result_ref`
-- `approvals`: `id`, `tool_call_id`, `scope`, `decision`, `decided_at`
-- `artifacts`: `id`, `task_id`, `path_or_uri`, `sha256`, `created_at`
-- `audit_events`: append-only event envelopes with correlation IDs and redaction
+`Task`, `PlanStep`, `Execution`, `Approval`, `Event`, `Artifact`, and
+`WorkerHeartbeat` are persisted in SQLite. A task carries its capability
+grant and plan version; an approval is bound to exact step arguments.
 
-### Planned HTTP interface
-
-```http
-POST /api/v1/tasks
-GET  /api/v1/tasks/{task_id}
-GET  /api/v1/tasks/{task_id}/events
-POST /api/v1/tasks/{task_id}/cancel
-POST /api/v1/approvals/{approval_id}/decision
-GET  /api/v1/tools
-```
-
-All mutation endpoints require authenticated user intent. Approval decisions include a specific pending action, not blanket permanent consent.
+The loopback API requires an explicit intent header for mutations. This is a
+single-owner local boundary, not remote authentication.
 
 ## Security and privacy
 
@@ -131,18 +119,19 @@ All mutation endpoints require authenticated user intent. Approval decisions inc
 
 ## User journey
 
-**Planned local workflow (after implementation):** install reviewed prerequisites from official sources, configure a local Ollama model, set up the API and web client using documented example environment variables, launch both services, open the local dashboard, submit a task, review its proposed plan, and approve or reject scoped actions. The actual installation commands will be published and tested with the first working release.
+For the working demo, follow [local setup](docs/development.md), launch the API,
+worker and web client, create a task, generate the deterministic plan, review
+it, start execution, and approve or reject the scoped report write. The model
+remains optional and network access is disabled.
 
-## Expected repository structure
+## Repository structure
 
 ```text
-nexus/
-├── apps/web/                 # React user interface
-├── services/api/             # FastAPI endpoints
-├── services/worker/          # Task orchestration and tool execution
-├── packages/contracts/       # Shared schemas and protocol specs
-├── tests/                    # Unit, integration and E2E tests
-├── docs/                     # Architecture, ADRs and threat model
+NEXUS/
+├── apps/web/                 # React user interface and Vitest checks
+├── services/api/             # FastAPI, worker, migrations and Pytest checks
+├── fixtures/demo/            # Synthetic local demo inputs
+├── docs/                     # Status, architecture, security and screenshots
 ├── .github/workflows/        # CI checks
 └── README.md
 ```
@@ -170,11 +159,11 @@ nexus/
 
 ## Roadmap
 
-- [ ] **Foundation:** repository structure, developer setup, linting and CI
-- [ ] **Core:** implement the primary workflow end-to-end with deterministic fixtures
+- [x] **Foundation:** repository structure, developer setup, linting and CI
+- [x] **Core demo:** implement the primary workflow end-to-end with deterministic fixtures
 - [ ] **Reliability:** input validation, state/error handling, security controls and automated tests
 - [ ] **Experience:** responsive dashboard, accessibility and understandable feedback
-- [ ] **Release:** documented local demo, screenshots, reproducible test results and v0.1.0 tag
+- [ ] **Release:** complete security gates, reproducible clean-clone demo and versioned release
 
 ## Contributing
 

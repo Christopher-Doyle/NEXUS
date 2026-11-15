@@ -16,6 +16,7 @@ from app.db import begin_write, get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
 from app.planning import args_hash, demo_plan, validate_steps
+from app.registry import REGISTRY
 from app.state import TRANSITIONS, transition
 from app.tool_policy import ToolDenied, workspace_file
 
@@ -70,7 +71,7 @@ def replace_steps(db: Session, task: Task, steps: list[StepInput]) -> None:
     task.steps = [PlanStep(
         task_id=task.id, ordinal=index, description=step.description,
         tool_name=step.tool_name, args_json=json.dumps(step.args, sort_keys=True),
-        args_hash=args_hash(step.args), risk_level="high" if step.tool_name == "write_report" else "low",
+        args_hash=args_hash(step.args), risk_level=REGISTRY[step.tool_name].risk,
         state="pending", dependencies_json=json.dumps(step.dependencies),
     ) for index, step in enumerate(steps, start=1)]
     task.plan_version += 1
