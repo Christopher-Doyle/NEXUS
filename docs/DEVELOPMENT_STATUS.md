@@ -55,8 +55,9 @@ number does not imply a 60% complete release or passing security gates.
   in-flight read or write. Pause/cancel during reads and cancellation at the
   report write boundary are covered by tests.
 - Tool timeouts are declared but not yet enforced as hard process deadlines.
-- The primary approved and rejected workflows passed a local browser smoke
-  test. Accessibility, a clean-clone demo and browser Ollama flow remain unverified.
+- The primary approved and rejected workflows pass isolated Playwright tests
+  from a fresh migrated database. Accessibility, a clean-clone installation
+  outside CI and the browser Ollama flow remain unverified.
 - Error handling and logging need a full security review. There is no
   automatic retention schedule or task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
@@ -70,6 +71,8 @@ number does not imply a 60% complete release or passing security gates.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
+- `npm run test:e2e`: two browser tests passed with installed Chrome, fresh
+  temporary SQLite database, API, worker and web client.
 - `npm audit`: zero vulnerabilities after updating Vitest.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
@@ -92,7 +95,8 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed for local settings (`e5d6bce`). Ollama is installed with
+Remote CI passed through API error handling and rate limits (`83d57ac`).
+The new browser CI job is pending push and remote verification. Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
@@ -101,8 +105,9 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `e5d6bce` (local settings).
-API error handling and rate limits: commit and push pending.
+Latest pushed commit before this checkpoint: `83d57ac` (API error handling
+and rate limits). Isolated browser demo and P0 traceability: commit and push
+pending.
 
 ## Known risks
 
@@ -114,6 +119,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push API error handling and rate limits. Then complete the
-remaining P0 acceptance
-checks and reproducible browser tests.
+Verify and push the isolated browser demo in CI. Then complete the remaining
+P0 acceptance checks, starting with explicit report citations and recovery.

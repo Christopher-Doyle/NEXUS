@@ -14,3 +14,5 @@ artifacts/
 data/
 .playwright/
 .playwright-cli/
+test-results/
+playwright-report/

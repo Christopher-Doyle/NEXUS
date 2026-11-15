@@ -1,0 +1,21 @@
+# P0 requirement traceability
+
+The source is the [20-page design specification](design-spec.pdf), section 02.
+"Verified baseline" means the implemented behavior has a local test or demo;
+it does not mean the v1 release gate has passed.
+
+| ID | State | Evidence and remaining acceptance work |
+| --- | --- | --- |
+| NX-F01 | Verified baseline | Task API and composer accept goal, constraints and bounded text files. API tests cover input scope. |
+| NX-F02 | Verified baseline | Numbered persisted plans can be generated and edited before execution; version conflict is tested. |
+| NX-F03 | Verified baseline | Registry schemas, capability grant and argument hash are checked at dispatch; invalid output is rejected. |
+| NX-F04 | Verified baseline | File writes require exact approval. Outbound fetch remains disabled until SSRF controls are complete. |
+| NX-F05 | Partial | SSE, task states, journal, search excerpts and artifact links work; accessible operational detail and full tool receipts still need review. |
+| NX-F06 | Partial | Journal, leases, safe read replay and uncertain-write stop are tested; crash-kill and manual resolution workflow remain. |
+| NX-F07 | Partial | A Markdown report downloads with source headings and hashes; explicit citation export and provenance validation remain. |
+| NX-N01 | Verified baseline | Registry contains no shell tool and tool grants are checked server-side. |
+| NX-N02 | Partial | Executions have stable keys and exclusive report creation; duplicate external-action and recovery acceptance tests remain. |
+| NX-N03 | Verified baseline | Synthetic fixture demo runs without an LLM, including automated approval and rejection browser tests. |
+
+**Measured baseline:** 6 of 10 P0 IDs, or **60%**. Release readiness is lower:
+security, accessibility, clean-clone and documentation gates are still open.

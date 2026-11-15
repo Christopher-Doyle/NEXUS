@@ -42,3 +42,14 @@ must already be installed; NEXUS does not download one.
 The Settings page can override the model name and both timeouts in SQLite.
 `APPROVED_WORKSPACES`, `DATA_DIR`, and `OLLAMA_ENDPOINT` remain operator-only
 environment settings. Run `alembic upgrade head` before using the updated UI.
+
+## Reproducible browser demo
+
+After `uv sync --extra dev` in `services/api` and `npm ci` in `apps/web`, run
+`npm run test:e2e` from `apps/web`. It needs an installed Google Chrome and
+does not download a browser. The runner creates an isolated temporary SQLite
+database, migrates it, starts the API, worker and web client on loopback,
+executes approved and rejected synthetic workflows, then stops services and
+removes its own test data. Ports 8765 and 5173 must be available. Set
+`NEXUS_PYTHON` to a Python executable if the API virtual environment is not
+at `services/api/.venv`.
