@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path, PureWindowsPath
 
 from pydantic import ValidationError
@@ -11,9 +12,21 @@ MAX_STEPS = 12
 
 
 def safe_relative_path(value: str) -> bool:
+    if not value or ":" in value or any(ord(character) < 32 for character in value):
+        return False
     path = Path(value)
     windows = PureWindowsPath(value)
     return not (path.is_absolute() or value.startswith("/") or windows.drive or "\\" in value or ".." in path.parts)
+
+
+def safe_local_workspace_path(value: str) -> bool:
+    if not value or value.startswith(("\\", "//")) or any(ord(character) < 32 for character in value):
+        return False
+    if os.name != "nt" and "\\" in value:
+        return False
+    if ":" in value and not (os.name == "nt" and len(value) >= 3 and value[0].isalpha() and value[1] == ":" and value.count(":") == 1):
+        return False
+    return Path(value).is_absolute()
 
 
 def args_hash(args: dict) -> str:

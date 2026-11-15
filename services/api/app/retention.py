@@ -32,7 +32,7 @@ def delete_task(db: Session, task: Task, data_dir: str) -> None:
     stage = trash / task.id
     if stage.exists() or stage.is_symlink():
         raise RetentionError("A prior deletion for this task needs operator review")
-    sources = [(kind, task_owned_dir(data_root, kind, task.id)) for kind in ("inputs", "artifacts")]
+    sources = [(kind, task_owned_dir(data_root, kind, task.id)) for kind in ("inputs", "workspaces", "artifacts")]
     stage.mkdir()
     moved: list[tuple[Path, Path]] = []
     try:

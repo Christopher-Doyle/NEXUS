@@ -24,7 +24,7 @@ from app.contracts import (
 from app.db import begin_write, get_db
 from app.models import Approval, Event, PlanStep, Task, new_id, utc_now
 from app.ollama import ModelPlanInvalid, ModelUnavailable, generate_plan
-from app.planning import args_hash, demo_plan, validate_steps
+from app.planning import args_hash, demo_plan, safe_local_workspace_path, validate_steps
 from app.preferences import effective_settings
 from app.registry import REGISTRY
 from app.retention import RetentionError, delete_task
@@ -97,8 +97,19 @@ def create_task(body: TaskCreate, db: DbSession) -> TaskView:
         raise HTTPException(status_code=422, detail="Choose an approved folder or attach files, not both")
     task_id = new_id()
     if body.workspace_path:
-        allowed = {os.path.normcase(str(Path(item).resolve())) for item in get_settings().approved_workspaces.split(";") if item.strip()}
-        selected = Path(body.workspace_path).resolve()
+        if not safe_local_workspace_path(body.workspace_path):
+            raise HTTPException(status_code=422, detail="Choose an absolute local folder without device or network path syntax")
+        allowed = set()
+        for item in get_settings().approved_workspaces.split(";"):
+            if safe_local_workspace_path(item.strip()):
+                try:
+                    allowed.add(os.path.normcase(str(Path(item.strip()).resolve(strict=True))))
+                except (OSError, ValueError):
+                    continue
+        try:
+            selected = Path(body.workspace_path).resolve(strict=True)
+        except (OSError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail="Folder is unavailable") from exc
         if os.path.normcase(str(selected)) not in allowed or not selected.is_dir():
             raise HTTPException(status_code=403, detail="Folder is not in APPROVED_WORKSPACES")
         entries = list(islice(selected.iterdir(), 101))
@@ -117,11 +128,18 @@ def create_task(body: TaskCreate, db: DbSession) -> TaskView:
         files = [item.name for item in body.input_files]
         if len(set(files)) != len(files) or any(len(item.content.encode("utf-8")) > 65536 for item in body.input_files):
             raise HTTPException(status_code=422, detail="Input files must have unique names and be at most 64 KiB each")
-        workspace = Path(get_settings().data_dir).resolve() / "workspaces" / task_id
-        workspace.mkdir(parents=True, exist_ok=False)
+        workspace_root = Path(get_settings().data_dir).resolve() / "workspaces"
+        workspace_root.mkdir(parents=True, exist_ok=True)
+        if workspace_root.resolve() != workspace_root:
+            raise HTTPException(status_code=403, detail="Input storage directory is redirected")
+        workspace = workspace_root / task_id
+        workspace.mkdir(exist_ok=False)
+        if workspace.resolve() != workspace:
+            raise HTTPException(status_code=403, detail="Task input directory is redirected")
         try:
             for item in body.input_files:
-                (workspace / item.name).write_text(item.content, encoding="utf-8")
+                with (workspace / item.name).open("x", encoding="utf-8") as output:
+                    output.write(item.content)
         except OSError as exc:
             raise HTTPException(status_code=500, detail="Could not store task inputs") from exc
     else:

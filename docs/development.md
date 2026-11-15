@@ -30,7 +30,7 @@ Open `http://127.0.0.1:5173`. The API docs are at
 
 The default demo uses two synthetic files in `fixtures/demo`. You may attach
 up to five `.md` or `.txt` files in the task form. To allow a folder instead,
-set `APPROVED_WORKSPACES` in `.env` to an exact absolute path; separate
+set `APPROVED_WORKSPACES` in `.env` to an exact absolute local path; separate
 multiple paths with semicolons. Writes always go to `DATA_DIR/artifacts` and
 require approval in the cockpit. Set `OLLAMA_MODEL` to an installed local model
 to enable Ollama planning; demo mode needs no model.

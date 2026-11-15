@@ -1,11 +1,13 @@
 import hashlib
 import json
+import os
+import stat
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from app.models import PlanStep, Task
-from app.planning import args_hash, safe_relative_path
+from app.planning import args_hash, safe_local_workspace_path, safe_relative_path
 from app.registry import ARG_SCHEMAS
 
 
@@ -32,6 +34,8 @@ def approval_scope(task: Task, step: PlanStep) -> str:
 
 
 def workspace_file(root: str, relative: str) -> Path:
+    if not safe_local_workspace_path(root):
+        raise ToolDenied("Workspace path is not a local absolute folder")
     base = Path(root).resolve(strict=True)
     if not safe_relative_path(relative):
         raise ToolDenied("Only files inside the selected workspace may be read")
@@ -43,3 +47,17 @@ def workspace_file(root: str, relative: str) -> Path:
     if candidate.stat().st_size > 65536:
         raise ToolDenied("File exceeds the 64 KiB read limit")
     return candidate
+
+
+def read_workspace_text(root: str, relative: str) -> tuple[str, str]:
+    path = workspace_file(root, relative)
+    expected = path.stat()
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0))
+    with os.fdopen(descriptor, "rb") as stream:
+        actual = os.fstat(stream.fileno())
+        if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino) or not stat.S_ISREG(actual.st_mode) or actual.st_size > 65536:
+            raise ToolDenied("Selected file changed before it could be read")
+        data = stream.read(65537)
+    if len(data) > 65536:
+        raise ToolDenied("File exceeds the 64 KiB read limit")
+    return path.name, data.decode("utf-8")

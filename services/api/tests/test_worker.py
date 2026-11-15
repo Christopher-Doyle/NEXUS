@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import time
 from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +18,7 @@ from app.main import app
 from app.models import Approval, Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
-from app.tool_policy import ToolDenied, approval_scope, workspace_file
+from app.tool_policy import ToolDenied, approval_scope, read_workspace_text, workspace_file
 from app.tool_runner import artifact_dir
 from app.worker import run_once
 
@@ -27,6 +28,27 @@ def test_workspace_rejects_traversal(tmp_path) -> None:
     assert workspace_file(str(tmp_path), "note.md").name == "note.md"
     with pytest.raises(ToolDenied):
         workspace_file(str(tmp_path), "../secret.md")
+
+
+def test_read_rejects_file_swapped_after_path_validation(tmp_path, monkeypatch) -> None:
+    selected = tmp_path / "brief.md"
+    replacement = tmp_path / "replacement.md"
+    selected.write_text("Selected evidence", encoding="utf-8")
+    replacement.write_text("Different evidence", encoding="utf-8")
+    original_open = os.open
+    swapped = False
+
+    def swap_before_open(path, flags):
+        nonlocal swapped
+        if not swapped and path == selected:
+            selected.rename(tmp_path / "original.md")
+            replacement.rename(selected)
+            swapped = True
+        return original_open(path, flags)
+
+    monkeypatch.setattr("app.tool_policy.os.open", swap_before_open)
+    with pytest.raises(ToolDenied, match="changed before it could be read"):
+        read_workspace_text(str(tmp_path), "brief.md")
 
 
 def test_artifact_directory_rejects_symlink_redirection(tmp_path) -> None:
@@ -97,6 +119,22 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert library["total"] == 1
         assert library["items"][0]["task_id"] == task_id
         assert client.get(f"/api/v1/artifacts/{artifacts[0]['id']}").status_code == 200
+        original_open = os.open
+        swapped = False
+
+        def swap_artifact_before_open(path, flags):
+            nonlocal swapped
+            if not swapped and path == report:
+                report.rename(report.with_name("original.md"))
+                report.write_text("Altered report", encoding="utf-8")
+                swapped = True
+            return original_open(path, flags)
+
+        monkeypatch.setattr("app.operations.os.open", swap_artifact_before_open)
+        assert client.get(f"/api/v1/artifacts/{artifacts[0]['id']}").status_code == 409
+        monkeypatch.setattr("app.operations.os.open", original_open)
+        report.unlink()
+        report.with_name("original.md").rename(report)
         receipts = client.get(f"/api/v1/tasks/{task_id}/executions").json()
         assert len(receipts) == 3
         assert [item["tool_name"] for item in receipts] == ["read_file", "read_file", "write_report"]

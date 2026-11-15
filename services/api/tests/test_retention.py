@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -52,6 +53,11 @@ def test_confirmed_delete_removes_task_data_without_touching_external_workspace(
         assert client.request("DELETE", f"/api/v1/tasks/{task.id}", headers=headers, json={"confirm_id": "wrong"}).status_code == 422
         assert client.request("DELETE", f"/api/v1/tasks/{active.id}", headers=headers, json={"confirm_id": active.id}).status_code == 409
         assert client.request("DELETE", f"/api/v1/tasks/{task.id}", headers=headers, json={"confirm_id": task.id}).status_code == 204
+        uploaded = client.post("/api/v1/tasks", headers=headers, json={"goal": "Delete uploaded task files", "input_files": [{"name": "private.md", "content": "Private task input"}]}).json()
+        uploaded_dir = Path(uploaded["workspace_path"])
+        assert (uploaded_dir / "private.md").read_text(encoding="utf-8") == "Private task input"
+        assert client.request("DELETE", f"/api/v1/tasks/{uploaded['id']}", headers=headers, json={"confirm_id": uploaded["id"]}).status_code == 204
+        assert not uploaded_dir.exists()
         assert client.get(f"/api/v1/tasks/{task.id}").status_code == 404
         assert not artifact.exists()
         assert not inputs.exists()

@@ -1,12 +1,15 @@
 import asyncio
 import hashlib
 import json
+import os
+import stat
 from datetime import UTC
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -141,10 +144,23 @@ def download_artifact(artifact_id: str, db: DbSession):
     artifact = db.get(Artifact, artifact_id)
     if artifact is None:
         raise HTTPException(status_code=404, detail="Artifact not found")
-    root = (Path(get_settings().data_dir).resolve() / "artifacts").resolve()
+    root = Path(get_settings().data_dir).resolve() / "artifacts"
+    if root.is_symlink() or (root.exists() and root.resolve() != root):
+        raise HTTPException(status_code=404, detail="Artifact is unavailable")
     path = Path(artifact.safe_path).resolve()
     if not path.is_relative_to(root) or not path.is_file():
         raise HTTPException(status_code=404, detail="Artifact is unavailable")
-    if hashlib.sha256(path.read_bytes()).hexdigest() != artifact.sha256:
+    max_bytes = REGISTRY["write_report"].resource_limits["report_bytes"]
+    try:
+        expected = path.stat()
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(descriptor, "rb") as stream:
+            actual = os.fstat(stream.fileno())
+            if (actual.st_dev, actual.st_ino) != (expected.st_dev, expected.st_ino) or not stat.S_ISREG(actual.st_mode):
+                raise HTTPException(status_code=409, detail="Artifact changed before download")
+            data = stream.read(max_bytes + 1)
+    except OSError as exc:
+        raise HTTPException(status_code=404, detail="Artifact is unavailable") from exc
+    if len(data) > max_bytes or len(data) != artifact.size_bytes or hashlib.sha256(data).hexdigest() != artifact.sha256:
         raise HTTPException(status_code=409, detail="Artifact integrity check failed")
-    return FileResponse(path, media_type=artifact.media_type, filename=path.name)
+    return Response(data, media_type=artifact.media_type, headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(path.name)}"})

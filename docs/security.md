@@ -19,13 +19,18 @@ report write rechecks the deadline. A tool already in progress may finish.
 Reads resolve the canonical path under the task workspace, reject symlink
 escapes, and cap Markdown/text files at 64 KiB. Uploaded text inputs are
 bounded to five files. Approved folders must exactly match the operator's
-`APPROVED_WORKSPACES` setting. Search examines only those selected files and
+`APPROVED_WORKSPACES` setting and use an absolute local path; UNC, device and
+alternate-stream syntax is rejected. Relative read paths reject those forms,
+traversal and control characters on both Windows and Linux. Reads compare the
+opened file identity with the validated file before reading, so a path swap
+between validation and open is denied. Search examines only those selected files and
 returns at most 20 line excerpts. Network access is not implemented.
 
 Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file
 and records its SHA-256 digest. Artifact directories reject symlink redirection.
-Downloads recheck the artifact path and digest.
+Downloads recheck the artifact path, opened file identity, size and digest
+before sending bytes. A redirected artifact root is rejected.
 Report citations name each local source and its line range and SHA-256 content
 snapshot. Before writing, the worker recomputes the digest of each stored read
 receipt and checks its source name against the plan step. A changed source
@@ -49,6 +54,11 @@ It rejects stale inspection digests, mismatched content, redirected paths and
 duplicate artifact records. An absent file may be acknowledged; it is never
 silently rewritten. Dependent steps requeue only if the task deadline remains
 valid; expired tasks stay failed.
+The app-owned report directory is checked for redirection before a write,
+but a separate process running as the same OS user could change that directory
+between the check and file creation. Stronger OS-level directory-handle or
+process isolation is still needed before treating local filesystem writes as
+fully race resistant.
 
 Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.
@@ -60,6 +70,8 @@ for inactive tasks. It removes task records, execution journals, and NEXUS-owned
 input and artifact directories. The selected external workspace is never a
 deletion target. Cleanup stages owned directories under the app data root;
 failure after database deletion is reported for operator cleanup.
+Uploaded inputs are stored under app-owned `workspaces/<task-id>` and are
+removed with the task; legacy `inputs/<task-id>` directories are also cleaned.
 
 The settings UI can change only the local model name and two bounded timeouts.
 It cannot expand workspace grants, enable network tools or change the loopback

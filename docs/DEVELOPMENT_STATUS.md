@@ -44,6 +44,11 @@ application or passing all security gates.
 - Confirmed deletion of inactive tasks removes their database journal,
   execution records, NEXUS-owned inputs and artifacts. External approved
   workspaces are excluded from cleanup.
+- Read paths reject drive, UNC, device, alternate-stream and control-character
+  syntax across platforms. Local folder grants require absolute paths. Reads
+  and artifact downloads compare the opened file identity with the validated
+  path before consuming bytes. Deletion now covers actual uploaded workspace
+  directories as well as legacy input directories.
 - An uncertain report write has a recovery inspection and cockpit action.
   The operator can accept an on-disk file only when it exactly matches the
   report rebuilt from verified read receipts, or confirm that no file exists.
@@ -78,7 +83,7 @@ application or passing all security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
-- `python -m pytest -q`: 47 backend tests passed, two symlink tests skipped on
+- `python -m pytest -q`: 68 backend tests passed, three symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -116,6 +121,13 @@ application or passing all security gates.
   its on-disk report to completion.
 - Receipt API test verifies tool version, execution metadata and exclusion
   of read contents; browser E2E checks the receipt view.
+- Platform-neutral path tests cover Windows and POSIX absolute paths,
+  traversal, UNC and device syntax, alternate streams and control characters.
+  A file-swap test rejects a changed selected file; an artifact-swap test
+  rejects a changed download. Approved local folders still work. Deleting a
+  draft task removes the uploaded input files actually created by the API.
+  Linux CI exercises the redirected-upload-root test skipped on this Windows
+  host.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -126,7 +138,7 @@ application or passing all security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for mobile browser coverage (`8fc88c5`).
+Remote CI passed all three jobs for accessibility checks (`49a564c`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -136,8 +148,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `8fc88c5` (mobile browser
-coverage). Automated accessibility checks: commit and push pending.
+Latest pushed commit before this checkpoint: `49a564c` (automated
+accessibility checks). Filesystem path hardening: commit and push pending.
 
 ## Known risks
 
@@ -149,6 +161,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push automated accessibility checks in CI. Then tackle remaining
+Verify and push filesystem path hardening in CI. Then tackle remaining
 release gates: tool process timeouts, manual accessibility review,
 comprehensive security review, platform paths, and performance evidence.

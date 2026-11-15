@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models import Artifact, Execution, PlanStep, Task
 from app.registry import REGISTRY
-from app.tool_policy import ToolDenied, workspace_file
+from app.tool_policy import ToolDenied, read_workspace_text
 
 
 def artifact_dir(data_dir: str, task_id: str) -> Path:
@@ -64,9 +64,8 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
     if step.tool_name == "read_file":
         if not task.workspace_path:
             raise ToolDenied("No workspace is configured for this task")
-        path = workspace_file(task.workspace_path, args["path"])
-        content = path.read_text(encoding="utf-8")
-        return {"source": path.name, "content": content, "sha256": hashlib.sha256(content.encode()).hexdigest()}
+        name, content = read_workspace_text(task.workspace_path, args["path"])
+        return {"source": name, "content": content, "sha256": hashlib.sha256(content.encode()).hexdigest()}
     if step.tool_name == "search_local_docs":
         if not task.workspace_path:
             raise ToolDenied("No workspace is configured for this task")
@@ -75,8 +74,8 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
             raise ToolDenied("Search query is too short")
         matches = []
         for name in json.loads(task.input_files_json)[:5]:
-            path = workspace_file(task.workspace_path, name)
-            for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            _, content = read_workspace_text(task.workspace_path, name)
+            for line_number, line in enumerate(content.splitlines(), start=1):
                 if query.casefold() in line.casefold():
                     matches.append({"source": name, "line": line_number, "excerpt": line[:200]})
                     if len(matches) == 20:
