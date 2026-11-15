@@ -34,4 +34,8 @@ set `APPROVED_WORKSPACES` in `.env` to an exact absolute path; separate
 multiple paths with semicolons. Writes always go to `DATA_DIR/artifacts` and
 require approval in the cockpit. Set `OLLAMA_MODEL` to an installed local model
 to enable Ollama planning; demo mode needs no model.
+`OLLAMA_TIMEOUT_SECONDS` bounds a planning request (default: 90 seconds).
+The optional adapter has been verified locally with `qwen3.5:9b`. It disables
+thinking for structured plans and caps generation at 1024 tokens. The model
+must already be installed; NEXUS does not download one.
 `TASK_TIMEOUT_SECONDS` sets the task dispatch deadline (default: 3600 seconds).

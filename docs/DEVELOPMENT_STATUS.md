@@ -17,7 +17,9 @@ number does not imply a 60% complete release or passing security gates.
 - Task creation with constraints, bounded text attachments or an approved local
   folder; deterministic plan generation, editing, version checks and state transitions.
 - Optional Ollama planning with structured JSON, local endpoint restriction,
-  bounded timeouts, one repair attempt and availability check.
+  configurable bounded timeout, capped generation, one repair attempt and
+  availability check. The installed `qwen3.5:9b` model produced a validated
+  synthetic two-step plan in a direct adapter check.
 - Separate worker process with three allowlisted tools: bounded text read,
   bounded search of selected local files, and approval-gated Markdown report write.
 - Explicit registry declares each tool's version, input and output schema,
@@ -54,7 +56,7 @@ number does not imply a 60% complete release or passing security gates.
 ## Checks executed
 
 - `uv run alembic upgrade head`: five migrations applied locally.
-- `python -m pytest -q`: 32 backend tests passed, one symlink test skipped on
+- `python -m pytest -q`: 33 backend tests passed, one symlink test skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -75,13 +77,17 @@ number does not imply a 60% complete release or passing security gates.
   test is skipped locally because directory symlinks are unavailable here;
   Linux CI will exercise it.
 
-Remote CI passed for the tool registry (`cf8c349`). Ollama is installed with
-two local models; a real planning invocation has not yet been verified.
+Remote CI passed for the task deadline (`f1d4c73`). Ollama is installed with
+two local models. A real `qwen3.5:9b` readiness check passed and a direct
+adapter call returned a validated read/write plan. The first 30-second call
+and a 90-second call without generation controls timed out; the bounded
+no-thinking call completed in about four seconds. An API/browser Ollama
+journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `cf8c349` (tool registry).
-Task deadline changes: commit and push pending.
+Latest pushed commit before this checkpoint: `f1d4c73` (task deadline).
+Ollama adapter change: commit and push pending.
 
 ## Known risks
 
@@ -93,6 +99,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the task deadline. Then verify planning with the installed
-local Ollama model, implement retention controls, and complete the remaining
+Commit and push the Ollama adapter change. Then implement retention controls
+and complete the remaining
 P0 acceptance checks and reproducible browser tests.

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     data_dir: str = "./data"
     approved_workspaces: str = ""
     task_timeout_seconds: int = Field(default=3600, ge=60, le=86400)
+    ollama_timeout_seconds: int = Field(default=90, ge=10, le=180)
 
 
 @lru_cache

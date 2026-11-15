@@ -34,6 +34,8 @@ def test_ollama_repairs_once_then_validates(monkeypatch) -> None:
     steps = generate_plan("Read notes", [], ["read_file"], "http://127.0.0.1:11434", "test-model")
     assert len(steps) == 1
     assert len(calls) == 2
+    assert calls[0][1]["think"] is False
+    assert calls[0][1]["options"]["num_predict"] == 1024
 
 
 def test_ollama_rejects_unsupported_tool_after_repair(monkeypatch) -> None:
@@ -54,3 +56,22 @@ def test_ollama_rejects_unsupported_tool_after_repair(monkeypatch) -> None:
     monkeypatch.setattr("app.ollama.httpx.Client", FakeClient)
     with pytest.raises(ModelPlanInvalid):
         generate_plan("Run shell", [], ["read_file"], "http://127.0.0.1:11434", "test-model")
+
+
+def test_ollama_reports_bounded_planning_timeout(monkeypatch) -> None:
+    class TimeoutClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def post(self, url, json):
+            raise httpx.ReadTimeout("slow model", request=httpx.Request("POST", url))
+
+    monkeypatch.setattr("app.ollama.httpx.Client", TimeoutClient)
+    with pytest.raises(ModelUnavailable, match="timed out after 45 seconds"):
+        generate_plan("Read notes", [], ["read_file"], "http://127.0.0.1:11434", "test-model", 45)

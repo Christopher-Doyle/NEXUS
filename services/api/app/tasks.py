@@ -157,7 +157,7 @@ def plan_task(task_id: str, db: DbSession, body: PlanRequest | None = None) -> T
     try:
         if body is not None and body.mode == "ollama":
             settings = get_settings()
-            steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, settings.ollama_model)
+            steps = generate_plan(task.goal, json.loads(task.constraints_json), capabilities, settings.ollama_endpoint, settings.ollama_model, settings.ollama_timeout_seconds)
         else:
             steps = validate_steps(demo_plan(capabilities, json.loads(task.input_files_json)), capabilities)
     except ModelUnavailable as exc:
