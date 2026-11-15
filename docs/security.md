@@ -78,7 +78,11 @@ failure after database deletion is reported for operator cleanup.
 Uploaded inputs are stored under app-owned `workspaces/<task-id>` and are
 removed with the task; legacy `inputs/<task-id>` directories are also cleaned.
 
-The settings UI can change only the local model name and two bounded timeouts.
+The settings UI can change the local model name, two bounded timeouts and an
+opt-in terminal-task retention period. The worker prunes at most 20 old
+completed, failed or cancelled tasks per hourly check; default zero keeps
+them until manual deletion. This is logical deletion, not secure erasure of
+SQLite free pages, backups or filesystem snapshots.
 It cannot expand workspace grants, enable network tools or change the loopback
 endpoint. Those boundaries remain in the operator's environment configuration.
 

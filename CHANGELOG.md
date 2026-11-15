@@ -23,6 +23,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 - Verified task-form keyboard focus order and Enter submission in the browser
   suite.
 - Added a reproducible isolated loopback API latency smoke script.
+- Added opt-in 30, 90 or 365 day retention for terminal tasks, with the local
+  worker pruning old records and NEXUS-owned files in bounded batches.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.

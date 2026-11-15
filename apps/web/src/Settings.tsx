@@ -11,22 +11,26 @@ export function Settings() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const changes: Pick<LocalSettings, 'ollama_model' | 'ollama_timeout_seconds' | 'task_timeout_seconds'> = {
+    const changes: Pick<LocalSettings, 'ollama_model' | 'ollama_timeout_seconds' | 'task_timeout_seconds' | 'retention_days'> = {
       ollama_model: String(form.get('ollama_model') || '').trim(),
       ollama_timeout_seconds: Number(form.get('ollama_timeout_seconds')),
       task_timeout_seconds: Number(form.get('task_timeout_seconds')),
+      retention_days: Number(form.get('retention_days')),
     }
+    if (changes.retention_days > 0 && changes.retention_days !== settings.data?.retention_days && !window.confirm(`Automatically delete completed, failed and cancelled tasks older than ${changes.retention_days} days? This includes their journals, uploaded inputs and artifacts.`)) return
     save.mutate(changes)
   }
 
   return <main>
     <div className="page-heading"><p className="kicker">Local configuration</p><h1>Settings.</h1><p>Choose a model and execution limits. Folder grants stay in the operator's local environment file.</p></div>
     {settings.isLoading ? <section className="empty-panel"><p>Loading settings…</p></section> : settings.isError || !settings.data ? <section className="empty-panel"><p role="alert">{settings.error?.message || 'Settings unavailable'}</p></section> : <>
-      <form className="form-panel" key={`${settings.data.ollama_model}-${settings.data.ollama_timeout_seconds}-${settings.data.task_timeout_seconds}`} onSubmit={submit}>
+      <form className="form-panel" key={`${settings.data.ollama_model}-${settings.data.ollama_timeout_seconds}-${settings.data.task_timeout_seconds}-${settings.data.retention_days}`} onSubmit={submit}>
         <label htmlFor="setting-model">Installed Ollama model <span className="optional">optional</span></label><input id="setting-model" name="ollama_model" defaultValue={settings.data.ollama_model} maxLength={100} placeholder="qwen3.5:9b" />
         <label htmlFor="setting-model-timeout">Model planning timeout, seconds</label><input id="setting-model-timeout" name="ollama_timeout_seconds" type="number" min={10} max={180} required defaultValue={settings.data.ollama_timeout_seconds} />
         <label htmlFor="setting-task-timeout">Task dispatch deadline, seconds</label><input id="setting-task-timeout" name="task_timeout_seconds" type="number" min={60} max={86400} required defaultValue={settings.data.task_timeout_seconds} />
         <p className="help-text">The deadline stops new tool actions after it expires. An action already in progress may finish.</p>
+        <label htmlFor="setting-retention">Completed task retention</label><select id="setting-retention" name="retention_days" defaultValue={settings.data.retention_days}><option value="0">Keep until I delete them</option><option value="30">30 days</option><option value="90">90 days</option><option value="365">365 days</option></select>
+        <p className="help-text">The local worker checks at startup and about once an hour. Only completed, failed and cancelled tasks are eligible. Deletion also removes NEXUS-owned inputs, journals and artifacts; selected external folders remain untouched.</p>
         {save.isError && <p role="alert" className="form-error">{save.error.message}</p>}{save.isSuccess && <p role="status" className="notice">Settings saved locally.</p>}
         <button className="button" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</button>
       </form>

@@ -1,11 +1,13 @@
 """Delete only files owned by a task under the configured app data root."""
 
 import shutil
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.db import begin_write
 from app.models import Approval, Artifact, Event, Execution, PlanStep, Task
 
 
@@ -59,3 +61,19 @@ def delete_task(db: Session, task: Task, data_dir: str) -> None:
         shutil.rmtree(stage)
     except OSError as exc:
         raise RetentionError("Task records were deleted but staged files need operator cleanup") from exc
+
+
+def prune_old_tasks(db: Session, data_dir: str, days: int, now: datetime | None = None) -> int:
+    """Delete at most 20 terminal tasks older than the user-selected age."""
+    if days not in {0, 30, 90, 365}:
+        raise ValueError("Unsupported retention period")
+    if days == 0:
+        return 0
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=days)
+    begin_write(db)
+    tasks = db.scalars(select(Task).where(Task.state.in_(["completed", "failed", "cancelled"]), Task.completed_at <= cutoff).order_by(Task.completed_at, Task.id).limit(20)).all()
+    if not tasks:
+        db.commit()
+    for task in tasks:
+        delete_task(db, task, data_dir)
+    return len(tasks)

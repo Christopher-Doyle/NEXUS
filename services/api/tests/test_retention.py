@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -7,9 +8,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Base, get_db, make_engine
 from app.main import app
-from app.models import Approval, Artifact, Event, Execution, PlanStep, Task
+from app.models import Approval, Artifact, Event, Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
-from app.retention import RetentionError, task_owned_dir
+from app.retention import RetentionError, prune_old_tasks, task_owned_dir
 
 
 def test_confirmed_delete_removes_task_data_without_touching_external_workspace(tmp_path, monkeypatch) -> None:
@@ -85,3 +86,31 @@ def test_delete_scope_rejects_redirected_owned_directory(tmp_path) -> None:
         pytest.skip("Directory symlinks are unavailable on this host")
     with pytest.raises(RetentionError, match="redirected"):
         task_owned_dir(data, "inputs", "task")
+
+
+def test_opt_in_retention_prunes_only_old_terminal_tasks(tmp_path) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'age.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    now = utc_now()
+    external = tmp_path / "selected"
+    external.mkdir()
+    (external / "keep.md").write_text("Keep", encoding="utf-8")
+    with factory() as db:
+        old = Task(goal="Old completed task", state="completed", completed_at=now - timedelta(days=40), workspace_path=str(external))
+        recent = Task(goal="Recent completed task", state="completed", completed_at=now - timedelta(days=10))
+        draft = Task(goal="Old draft task", state="draft", completed_at=now - timedelta(days=40))
+        db.add_all([old, recent, draft])
+        db.commit()
+        owned = tmp_path / "data" / "artifacts" / old.id
+        owned.mkdir(parents=True)
+        (owned / "report.md").write_text("Delete", encoding="utf-8")
+        assert prune_old_tasks(db, str(tmp_path / "data"), 0, now) == 0
+        assert db.get(Task, old.id) is not None
+        assert prune_old_tasks(db, str(tmp_path / "data"), 30, now) == 1
+        assert db.get(Task, old.id) is None
+        assert db.get(Task, recent.id) is not None
+        assert db.get(Task, draft.id) is not None
+        assert not owned.exists()
+        assert (external / "keep.md").read_text(encoding="utf-8") == "Keep"
+    engine.dispose()

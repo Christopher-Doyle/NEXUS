@@ -8,11 +8,15 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 from sqlalchemy import and_, case, or_, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
+from app.config import get_settings
 from app.db import SessionLocal, begin_write
 from app.models import Approval, Execution, PlanStep, Task, WorkerHeartbeat, utc_now
+from app.preferences import effective_settings
 from app.registry import REGISTRY
+from app.retention import RetentionError, prune_old_tasks
 from app.state import deadline_expired, transition
 from app.tasks import record_event
 from app.tool_policy import ToolDenied, approval_scope, validate_invocation
@@ -288,6 +292,7 @@ def run_once_bounded(child_target=None) -> bool:
 
 def main() -> None:
     worker_id = str(uuid4())
+    last_prune = 0.0
     while True:
         with SessionLocal() as db:
             heartbeat = db.get(WorkerHeartbeat, worker_id)
@@ -297,6 +302,16 @@ def main() -> None:
             else:
                 heartbeat.last_seen_at = utc_now()
             db.commit()
+            if time.monotonic() - last_prune >= 3600:
+                try:
+                    days = effective_settings(db).retention_days
+                    db.commit()
+                    prune_old_tasks(db, get_settings().data_dir, days)
+                    last_prune = time.monotonic()
+                except (OSError, RetentionError, SQLAlchemyError, ValueError):
+                    db.rollback()
+                    print("Retention cleanup needs operator review")
+                    last_prune = time.monotonic() - 3540
             expired = and_(Task.deadline_at.is_not(None), Task.deadline_at <= utc_now())
             pending = db.scalar(select(Task.id).where(or_(Task.state.in_(["queued", "running", "pausing"]), and_(Task.state.in_(["waiting_approval", "paused"]), expired))).limit(1)) is not None
         if not pending:

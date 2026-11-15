@@ -61,6 +61,12 @@ test('mobile settings remain usable and persist a deadline', async ({ page }) =>
   await expect(page.getByRole('status')).toHaveText('Settings saved locally.')
   await page.reload()
   await expect(deadline).toHaveValue('1200')
+  await page.getByLabel('Completed task retention').selectOption('30')
+  page.once('dialog', dialog => dialog.accept())
+  await page.getByRole('button', { name: 'Save settings' }).click()
+  await expect(page.getByRole('status')).toHaveText('Settings saved locally.')
+  await page.reload()
+  await expect(page.getByLabel('Completed task retention')).toHaveValue('30')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
 

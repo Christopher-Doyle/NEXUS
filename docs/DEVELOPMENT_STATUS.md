@@ -48,6 +48,9 @@ application or passing all security gates.
 - Confirmed deletion of inactive tasks removes their database journal,
   execution records, NEXUS-owned inputs and artifacts. External approved
   workspaces are excluded from cleanup.
+- Optional 30, 90 or 365 day retention prunes old terminal tasks and their
+  NEXUS-owned files in batches of 20 when the worker runs. Default zero keeps
+  records until manual deletion; the Settings page confirms enabling cleanup.
 - Read paths reject drive, UNC, device, alternate-stream and control-character
   syntax across platforms. Local folder grants require absolute paths. Reads
   and artifact downloads compare the opened file identity with the validated
@@ -57,8 +60,8 @@ application or passing all security gates.
   The operator can accept an on-disk file only when it exactly matches the
   report rebuilt from verified read receipts, or confirm that no file exists.
   Accepted reports requeue dependent steps if the task deadline is still valid.
-- Local settings page persists the chosen Ollama model, planning timeout and
-  task dispatch deadline. Operator-approved workspace paths and the loopback
+- Local settings page persists the chosen Ollama model, planning timeout,
+  task dispatch deadline and retention period. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
@@ -82,11 +85,11 @@ application or passing all security gates.
 - The primary approved and rejected workflows pass isolated Playwright tests
   from a fresh migrated database. Automated WCAG A/AA checks pass on the
   dashboard, task form, settings, plan review and completed cockpit. Manual
-  manual assistive technology review remains unverified. Automated keyboard
+  assistive technology review remains unverified. Automated keyboard
   focus order and Enter submission pass for the task form. The separate
   clean-checkout setup and opt-in browser Ollama plan test passed.
 - The local security review documents remaining limitations. There is no
-  automatic retention schedule or bulk task export UI yet.
+  bulk task export UI or secure erasure of SQLite pages and backups yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
   added without an explicit owner decision.
 
@@ -102,7 +105,7 @@ application or passing all security gates.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 79 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 80 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -110,6 +113,7 @@ application or passing all security gates.
 - `npm run test:e2e`: seven standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
+  It also confirms and persists a 30-day retention choice after reload.
   Automated WCAG A/AA checks pass on five core views after correcting the
   plan reorder buttons' accessible names.
 - A keyboard-only task-form path verified focus order through all fields and
@@ -159,6 +163,9 @@ application or passing all security gates.
   unavailable here; Linux CI will exercise them.
 - Retention test: exact confirmation and inactive-state checks; deletion of
   task records, inputs and artifacts leaves the selected external workspace intact.
+- Age-based retention test: default zero preserves data; enabling 30 days
+  removes an old completed task and its owned report while preserving a recent
+  task, an old draft and the selected external workspace.
 - Settings test: preferences persist and a newly started task receives the
   configured deadline.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
@@ -175,7 +182,7 @@ application or passing all security gates.
   1.16/1.44/1.60 ms. Ten synthetic task creates measured 3.59/5.17/15.97 ms.
   These are one-host smoke timings, not throughput or capacity claims.
 
-Remote CI passed all three jobs for the Ollama input-scope checkpoint (`5b82457`).
+Remote CI passed all three jobs for the latency checkpoint (`e748d2a`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -189,8 +196,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `5b82457` (Ollama input scope
-and full browser workflow). The latency smoke script is pending commit.
+Latest pushed commit before this checkpoint: `e748d2a` (loopback latency
+measurement). Opt-in age-based retention is tested locally and pending commit.
 
 ## Known risks
 
@@ -203,5 +210,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the measured latency script. Continue with manual assistive
-technology review and load/capacity testing before a stable release.
+Commit and push opt-in retention, then verify remote CI. Continue with manual
+assistive technology review and load/capacity testing before a stable release.

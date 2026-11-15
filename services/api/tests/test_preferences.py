@@ -23,12 +23,15 @@ def test_local_settings_persist_and_bound_new_task_deadline(tmp_path) -> None:
         headers = {"x-nexus-intent": "local"}
         before = client.get("/api/v1/settings").json()
         assert before["network_access_enabled"] is False
+        assert before["retention_days"] == 0
         assert client.patch("/api/v1/settings", json={"ollama_model": "qwen3.5:9b"}).status_code == 403
         assert client.patch("/api/v1/settings", headers=headers, json={"network_access_enabled": True}).status_code == 422
         assert client.patch("/api/v1/settings", headers=headers, json={"ollama_model": "model with spaces"}).status_code == 422
-        updated = client.patch("/api/v1/settings", headers=headers, json={"ollama_model": "qwen3.5:9b", "ollama_timeout_seconds": 45, "task_timeout_seconds": 120})
+        assert client.patch("/api/v1/settings", headers=headers, json={"retention_days": 1}).status_code == 422
+        updated = client.patch("/api/v1/settings", headers=headers, json={"ollama_model": "qwen3.5:9b", "ollama_timeout_seconds": 45, "task_timeout_seconds": 120, "retention_days": 30})
         assert updated.status_code == 200
         assert updated.json()["task_timeout_seconds"] == 120
+        assert client.get("/api/v1/settings").json()["retention_days"] == 30
         assert client.get("/api/v1/settings").json()["ollama_model"] == "qwen3.5:9b"
         created = client.post("/api/v1/tasks", headers=headers, json={"goal": "Prepare a synthetic report"}).json()
         assert client.post(f"/api/v1/tasks/{created['id']}/plan", headers=headers).status_code == 202
