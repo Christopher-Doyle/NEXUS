@@ -32,6 +32,7 @@ logger = logging.getLogger("nexus.api")
 
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 LOCAL_ORIGINS = {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:8765", "http://localhost:8765"}
+MAX_REQUEST_BYTES = 512 * 1024
 
 
 @app.exception_handler(HTTPException)
@@ -67,6 +68,22 @@ async def local_intent(request: Request, call_next):
         retry_after = rate_limiter.retry_after(request.client.host if request.client else "local", bucket)
         if retry_after is not None:
             return JSONResponse(status_code=429, content={"code": "rate_limited", "message": "Too many local requests; retry shortly", "correlation_id": request.state.correlation_id}, headers={"Retry-After": str(retry_after), "X-Correlation-ID": request.state.correlation_id})
+        oversized = lambda: JSONResponse(status_code=413, content={"code": "request_too_large", "message": "Request body exceeds 512 KiB", "correlation_id": request.state.correlation_id}, headers={"X-Correlation-ID": request.state.correlation_id})
+        declared_size = request.headers.get("content-length")
+        if declared_size is not None:
+            try:
+                if int(declared_size) < 0:
+                    raise ValueError("negative length")
+                if int(declared_size) > MAX_REQUEST_BYTES:
+                    return oversized()
+            except ValueError:
+                return JSONResponse(status_code=400, content={"code": "invalid_content_length", "message": "Invalid Content-Length", "correlation_id": request.state.correlation_id})
+        body = bytearray()
+        async for chunk in request.stream():
+            if len(body) + len(chunk) > MAX_REQUEST_BYTES:
+                return oversized()
+            body.extend(chunk)
+        request._body = bytes(body)
     response = await call_next(request)
     response.headers["X-Correlation-ID"] = request.state.correlation_id
     return response

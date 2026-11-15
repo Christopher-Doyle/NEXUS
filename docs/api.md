@@ -45,6 +45,8 @@ a separate process for queued tasks to progress. API responses include a
 correlation ID for HTTP and validation errors.
 Mutation rate limits return 429 and `Retry-After`. Unexpected errors return a
 generic 500 body with a correlation ID; exception text is not sent to the client.
+Mutating request bodies are limited to 512 KiB before JSON parsing; larger
+bodies return 413, including when sent without `Content-Length`.
 
 Started tasks include `deadline_at`. `TASK_TIMEOUT_SECONDS` defaults to 3600
 and may be set from 60 to 86400. The deadline prevents new tool dispatch and

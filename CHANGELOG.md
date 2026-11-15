@@ -17,6 +17,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   metadata, bounded journal, execution receipts and artifact metadata.
 - Verified the installed local Ollama model through the browser plan-review
   workflow with an opt-in integration test.
+- Capped mutation request bodies at 512 KiB before parsing and fixed a
+  report test that assumed a particular checkout line-ending convention.
 
 See [development status](docs/DEVELOPMENT_STATUS.md) for test evidence and
 remaining release gates.

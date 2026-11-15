@@ -14,7 +14,7 @@ code, backend tests, process-kill tests and browser suite at this checkpoint.
 | Medium | A local caller could set `network_access=true` despite no approved outbound tool. | Fixed. Task creation rejects the flag; settings and tool registry also keep outbound tools disabled. |
 | Medium | App-owned report directories are checked before writes, but another process running as the same OS user could redirect a directory between validation and file creation. | Open. Exclusive creation and recovery prevent silent duplicate writes, but strong directory-handle isolation is still needed for this local race. |
 | Medium | Task evidence and model planning data live in local SQLite. Deleting a task removes logical records and owned files, but SQLite WAL pages, backups and filesystem snapshots are not securely erased. | Open. Document the retention boundary and add an operator-controlled compaction/backup policy before claiming secure erasure. |
-| Low | Mutation and planning rate limits are in process, reset on restart and do not bound all request body bytes. | Open. Suitable only as a local resource guard; a remote deployment would need durable limits and an ASGI body-size cap. |
+| Low | Mutation and planning rate limits are in process and reset on restart. | Open. Suitable only as a local resource guard; a remote deployment would need durable limits. Mutating request bodies are now capped at 512 KiB, including streamed bodies. |
 
 Trust boundaries checked: task capability grants and plan argument hashes;
 approval scope and expiry; source text treated as data; local Ollama origin and

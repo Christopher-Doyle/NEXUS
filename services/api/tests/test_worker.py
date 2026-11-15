@@ -109,8 +109,9 @@ def test_demo_execution_requires_exact_approval(tmp_path, monkeypatch) -> None:
         assert "Atlas" in report_text
         assert "## Citations" in report_text
         for number, name in enumerate(("brief.md", "meeting.md"), start=1):
-            source = (DEMO_WORKSPACE / name).read_text(encoding="utf-8")
-            digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+            source_bytes = (DEMO_WORKSPACE / name).read_bytes()
+            source = source_bytes.decode("utf-8")
+            digest = hashlib.sha256(source_bytes).hexdigest()
             assert f"## Source [{number}]: \"{name}\"" in report_text
             assert f"[{number}] \"{name}\", lines 1–{len(source.splitlines())}, SHA-256 `{digest}`." in report_text
         artifacts = client.get(f"/api/v1/tasks/{task_id}/artifacts").json()

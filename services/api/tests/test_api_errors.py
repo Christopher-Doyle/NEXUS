@@ -27,6 +27,20 @@ def test_mutation_rate_limit_returns_retry_after(monkeypatch) -> None:
     assert client.get("/api/v1/missing").status_code == 404
 
 
+def test_mutation_body_is_bounded_with_and_without_content_length(monkeypatch) -> None:
+    monkeypatch.setattr("app.main.rate_limiter", RateLimiter(mutation_limit=10, planning_limit=10))
+    client = TestClient(app, base_url="http://127.0.0.1:8765")
+    headers = {"x-nexus-intent": "local"}
+    oversized = b"x" * (512 * 1024 + 1)
+    declared = client.post("/api/v1/missing", content=oversized, headers=headers)
+    assert declared.status_code == 413
+    assert declared.json()["code"] == "request_too_large"
+    streamed = client.post("/api/v1/missing", content=iter([oversized[:300000], oversized[300000:]]), headers=headers)
+    assert streamed.status_code == 413
+    assert streamed.json()["code"] == "request_too_large"
+    assert client.post("/api/v1/missing", content=b"{}", headers=headers).status_code == 404
+
+
 def test_unexpected_error_is_redacted_and_correlated() -> None:
     def broken_db():
         raise RuntimeError("SECRET_TOKEN_SHOULD_NOT_LEAK")

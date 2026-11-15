@@ -93,11 +93,13 @@ application or passing all security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
-- A separate local checkout succeeded. Offline `uv sync --extra dev` and
-  `npm ci` could not complete because the local caches lack `ruff==0.17.5`
-  and `yallist==3.1.1`; no packages were downloaded. Approval was requested
-  before attempting network-backed installation.
-- `python -m pytest -q`: 76 passed, three symlink skips on this Windows host,
+- A separate local checkout succeeded. Offline installation found uncached
+  packages; after approval, `uv sync --extra dev` and `npm ci` installed the
+  lockfile dependencies. The clean frontend production build and all seven
+  documented database migrations passed. The
+  initial backend run found a line-ending assumption in a report assertion;
+  it has been corrected for the next clean-checkout run.
+- `python -m pytest -q`: 77 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -155,6 +157,7 @@ application or passing all security gates.
   configured deadline.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
+  Mutating bodies above 512 KiB return 413 with and without `Content-Length`.
 - Timeout tests terminate stalled read and report child processes, preserve
   cancellation, and verify before-write and after-write reconciliation.
   The standard browser tests pass with the supervised production worker.
@@ -172,8 +175,8 @@ model-generated plan remains unverified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `28d7c73` (per-task history
-export). The opt-in Ollama browser test and documentation are pending commit.
+Latest pushed commit before this checkpoint: `20463da` (Ollama browser plan
+test). The request-size cap and clean-checkout test fix are pending commit.
 
 ## Known risks
 
@@ -186,6 +189,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the opt-in Ollama browser test. Clean-checkout install is
-blocked on uncached package downloads pending approval; continue with manual
-accessibility and performance gates.
+Commit and push the request-size cap and line-ending-independent test. Pull
+the new commit into the clean checkout, rerun tests and migrations, then
+continue with manual accessibility and performance gates.
