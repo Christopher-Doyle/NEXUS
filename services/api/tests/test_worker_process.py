@@ -1,15 +1,18 @@
+import hashlib
 import json
 import multiprocessing
 import time
 from datetime import timedelta
+from types import SimpleNamespace
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 
 from app.db import Base, make_engine
-from app.models import Execution, PlanStep, Task, utc_now
+from app.models import Approval, Artifact, Execution, PlanStep, Task, utc_now
 from app.planning import args_hash
 from app.tasks import DEMO_WORKSPACE
+from app.tool_policy import approval_scope
 from app.worker import run_once
 
 
@@ -40,6 +43,26 @@ def interrupted_read_worker(database_url: str, entered) -> None:
         time.sleep(60)
 
     worker.run_tool = blocked_read
+    with factory() as db:
+        worker.run_once(db)
+    engine.dispose()
+
+
+def interrupted_write_worker(database_url: str, data_dir: str, written) -> None:
+    from app import tool_runner, worker
+
+    engine = make_engine(database_url)
+    factory = sessionmaker(bind=engine)
+    tool_runner.get_settings = lambda: SimpleNamespace(data_dir=data_dir)
+    original = worker.run_tool
+
+    def block_after_write(db, task, step):
+        result = original(db, task, step)
+        written.set()
+        time.sleep(60)
+        return result
+
+    worker.run_tool = block_after_write
     with factory() as db:
         worker.run_once(db)
     engine.dispose()
@@ -79,6 +102,55 @@ def test_killed_worker_replays_expired_read_lease(tmp_path) -> None:
             assert db.get(Task, task_id).state == "completed"
             execution = db.scalar(select(Execution).where(Execution.step_id == step_id))
             assert execution.attempt == 2 and execution.status == "completed"
+    finally:
+        if process.is_alive():
+            process.terminate()
+            process.join(timeout=5)
+        engine.dispose()
+
+
+def test_killed_worker_does_not_repeat_uncertain_write(tmp_path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'uncertain.db'}"
+    engine = make_engine(database_url)
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine)
+    source = (DEMO_WORKSPACE / "brief.md").read_text(encoding="utf-8")
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+    with factory() as db:
+        task = Task(goal="Recover uncertain write", state="running", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file","write_report"]', input_files_json='["brief.md"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        read = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="completed")
+        write = PlanStep(task_id=task.id, ordinal=2, description="Write report", tool_name="write_report", args_json='{"filename":"report.md"}', args_hash=args_hash({"filename": "report.md"}), risk_level="high", state="pending", dependencies_json="[1]")
+        db.add_all([read, write])
+        db.flush()
+        db.add(Execution(step_id=read.id, attempt=1, idempotency_key=approval_scope(task, read), status="completed", result_json=json.dumps({"source": "brief.md", "content": source, "sha256": digest})))
+        db.add(Approval(step_id=write.id, scope_hash=approval_scope(task, write), requested_action="Write report.md", decision="approved", expires_at=utc_now() + timedelta(hours=1)))
+        task_id, write_id = task.id, write.id
+        db.commit()
+    context = multiprocessing.get_context("spawn")
+    written = context.Event()
+    process = context.Process(target=interrupted_write_worker, args=(database_url, str(tmp_path), written))
+    report = tmp_path / "artifacts" / task_id / "report.md"
+    try:
+        process.start()
+        assert written.wait(timeout=10), "Worker did not create the report"
+        process.terminate()
+        process.join(timeout=5)
+        assert not process.is_alive() and report.is_file()
+        with factory() as db:
+            execution = db.scalar(select(Execution).where(Execution.step_id == write_id))
+            assert execution.status == "running" and execution.attempt == 1
+            assert db.scalar(select(func.count()).select_from(Artifact).where(Artifact.task_id == task_id)) == 0
+            execution.lease_until = utc_now() - timedelta(seconds=1)
+            db.commit()
+        with factory() as db:
+            assert run_once(db)
+            assert db.get(Task, task_id).state == "failed"
+            assert db.get(PlanStep, write_id).state == "needs_review"
+            assert db.scalar(select(func.count()).select_from(Execution).where(Execution.step_id == write_id)) == 1
+            assert not run_once(db)
+        assert list(report.parent.iterdir()) == [report]
     finally:
         if process.is_alive():
             process.terminate()

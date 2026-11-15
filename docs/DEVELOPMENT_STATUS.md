@@ -7,8 +7,8 @@ remain open for broader requirements. Milestone 7 is underway; Milestone 8
 is not release-ready.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
-through NX-N03. Seven have verified baseline behavior (NX-F01, F02, F03, F04,
-F07, N01, N03), so functional P0 progress is **7/10 = 70%**. F05, F06 and N02
+through NX-N03. Eight have verified baseline behavior (NX-F01, F02, F03, F04,
+F07, N01, N02, N03), so functional P0 progress is **8/10 = 80%**. F05 and F06
 are partially implemented and need their remaining acceptance checks. This
 number does not imply a 60% complete release or passing security gates.
 
@@ -95,6 +95,9 @@ number does not imply a 60% complete release or passing security gates.
   attempt, without dispatching another tool call.
 - A spawned worker process was terminated inside an active read. After its
   lease expired, a second worker completed the same step on attempt two.
+- Another worker process was terminated after creating a report file but
+  before committing its artifact record. Recovery left one file and one
+  execution and flagged the write for review without replaying it.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -105,7 +108,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for bounded retries (`e22d9bc`).
+Remote CI passed all three jobs for killed-read recovery (`1667fc3`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -115,8 +118,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `e22d9bc` (bounded safe-read
-retries). Killed-worker recovery test: commit and push pending.
+Latest pushed commit before this checkpoint: `1667fc3` (killed-read
+recovery). Killed-write idempotency test: commit and push pending.
 
 ## Known risks
 
@@ -128,5 +131,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push the killed-worker recovery test in CI. Then build the
+Verify and push the killed-write idempotency test in CI. Then build the
 uncertain-write manual resolution workflow.

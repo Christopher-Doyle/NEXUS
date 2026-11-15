@@ -37,6 +37,9 @@ instead of repeating it. Expired read leases retry at most twice after the
 initial attempt; exhaustion fails the task. A 12-task test with two separate
 Windows worker processes completed without duplicate executions. One worker remains the
 recommended development setup while broader recovery behavior is verified.
+An additional test kills a worker after the report reaches disk but before
+its database transaction commits. Recovery preserves the single file and
+execution receipt and marks the step for review.
 
 Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.

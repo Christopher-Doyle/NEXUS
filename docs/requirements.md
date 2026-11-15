@@ -14,8 +14,8 @@ it does not mean the v1 release gate has passed.
 | NX-F06 | Partial | Journal, leases, safe read replay after a real worker kill, bounded attempts and uncertain-write stop are tested; manual resolution workflow remains. |
 | NX-F07 | Verified baseline | Downloaded Markdown reports include numbered source citations, line ranges and SHA-256 snapshots. A tampered read receipt prevents report creation; browser and backend tests cover export. Semantic claims are not independently verified. |
 | NX-N01 | Verified baseline | Registry contains no shell tool and tool grants are checked server-side. |
-| NX-N02 | Partial | Executions have stable keys and exclusive report creation; duplicate external-action and recovery acceptance tests remain. |
+| NX-N02 | Verified baseline | Executions carry stable unique keys; a killed worker after report file creation leaves one file and one execution, and recovery stops for review without replaying the write. Safe reads retry within a three-attempt limit. |
 | NX-N03 | Verified baseline | Synthetic fixture demo runs without an LLM, including automated approval and rejection browser tests. |
 
-**Measured baseline:** 7 of 10 P0 IDs, or **70%**. Release readiness is lower:
+**Measured baseline:** 8 of 10 P0 IDs, or **80%**. Release readiness is lower:
 security, accessibility, clean-clone and documentation gates are still open.
