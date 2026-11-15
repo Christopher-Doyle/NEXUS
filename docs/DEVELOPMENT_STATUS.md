@@ -42,6 +42,8 @@ number does not imply a 60% complete release or passing security gates.
 - Local settings page persists the chosen Ollama model, planning timeout and
   task dispatch deadline. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
+- Local mutation rate limits and redacted, correlated 500 responses. Planning
+  has a separate request bucket; the limiter is in-process and resets on restart.
 
 ## Incomplete
 
@@ -55,15 +57,15 @@ number does not imply a 60% complete release or passing security gates.
 - Tool timeouts are declared but not yet enforced as hard process deadlines.
 - The primary approved and rejected workflows passed a local browser smoke
   test. Accessibility, a clean-clone demo and browser Ollama flow remain unverified.
-- Error handling and logging need a full security review. There is no rate
-  limiting, automatic retention schedule or task export UI yet.
+- Error handling and logging need a full security review. There is no
+  automatic retention schedule or task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
   added without an explicit owner decision.
 
 ## Checks executed
 
 - `uv run alembic upgrade head`: six migrations applied locally.
-- `python -m pytest -q`: 35 backend tests passed, two symlink tests skipped on
+- `python -m pytest -q`: 37 backend tests passed, two symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -87,8 +89,10 @@ number does not imply a 60% complete release or passing security gates.
   task records, inputs and artifacts leaves the selected external workspace intact.
 - Settings test: preferences persist and a newly started task receives the
   configured deadline.
+- API error tests: local mutation rate limiting returns `Retry-After`; an
+  unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed for task deletion (`d68d821`). Ollama is installed with
+Remote CI passed for local settings (`e5d6bce`). Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
 and a 90-second call without generation controls timed out; the bounded
@@ -97,8 +101,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `d68d821` (confirmed task deletion).
-Settings interface: commit and push pending.
+Latest pushed commit before this checkpoint: `e5d6bce` (local settings).
+API error handling and rate limits: commit and push pending.
 
 ## Known risks
 
@@ -110,6 +114,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Commit and push the settings interface. Then review API errors and rate
-limiting, and complete the remaining P0 acceptance
+Commit and push API error handling and rate limits. Then complete the
+remaining P0 acceptance
 checks and reproducible browser tests.

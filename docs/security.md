@@ -46,3 +46,9 @@ failure after database deletion is reported for operator cleanup.
 The settings UI can change only the local model name and two bounded timeouts.
 It cannot expand workspace grants, enable network tools or change the loopback
 endpoint. Those boundaries remain in the operator's environment configuration.
+
+Mutating requests are limited in process to 120 per minute, with a separate
+20-per-minute planning bucket. Responses include `Retry-After` when limited.
+This is a local resource safeguard, not a distributed or durable security
+boundary. Unexpected exceptions return a generic 500 with a correlation ID;
+the local log records only the exception type and correlation ID.

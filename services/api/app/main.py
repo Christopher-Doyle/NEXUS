@@ -1,3 +1,5 @@
+import json
+import logging
 from datetime import UTC, timedelta
 from typing import Annotated
 from uuid import uuid4
@@ -16,12 +18,15 @@ from app.ollama import model_status
 from app.operations import router as operations_router
 from app.preferences import effective_settings
 from app.preferences import router as preferences_router
+from app.rate_limit import RateLimiter
 from app.tasks import router as tasks_router
 
 app = FastAPI(title="NEXUS API", version="0.1.0")
 app.include_router(tasks_router)
 app.include_router(operations_router)
 app.include_router(preferences_router)
+rate_limiter = RateLimiter()
+logger = logging.getLogger("nexus.api")
 
 LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
 LOCAL_ORIGINS = {"http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:8765", "http://localhost:8765"}
@@ -37,6 +42,13 @@ async def validation_error(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={"code": "validation_error", "message": "; ".join(str(item["msg"]) for item in exc.errors())[:500], "correlation_id": request.state.correlation_id})
 
 
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    correlation_id = getattr(request.state, "correlation_id", str(uuid4()))
+    logger.error(json.dumps({"event": "request_failed", "correlation_id": correlation_id, "exception_type": type(exc).__name__}))
+    return JSONResponse(status_code=500, content={"code": "internal_error", "message": "Request failed; consult the local log using the correlation ID", "correlation_id": correlation_id}, headers={"X-Correlation-ID": correlation_id})
+
+
 @app.middleware("http")
 async def local_intent(request: Request, call_next):
     request.state.correlation_id = str(uuid4())
@@ -49,6 +61,10 @@ async def local_intent(request: Request, call_next):
             return JSONResponse(status_code=403, content={"code": "invalid_origin", "message": "Origin is not allowed", "correlation_id": request.state.correlation_id})
         if request.headers.get("x-nexus-intent") != "local":
             return JSONResponse(status_code=403, content={"code": "missing_intent", "message": "Local intent header required", "correlation_id": request.state.correlation_id})
+        bucket = "planning" if request.url.path.endswith("/plan") else "mutation"
+        retry_after = rate_limiter.retry_after(request.client.host if request.client else "local", bucket)
+        if retry_after is not None:
+            return JSONResponse(status_code=429, content={"code": "rate_limited", "message": "Too many local requests; retry shortly", "correlation_id": request.state.correlation_id}, headers={"Retry-After": str(retry_after), "X-Correlation-ID": request.state.correlation_id})
     response = await call_next(request)
     response.headers["X-Correlation-ID"] = request.state.correlation_id
     return response

@@ -35,6 +35,8 @@ OpenAPI is available at `/docs` while the API runs. `POST /plan` accepts
 the environment; no model is downloaded automatically. The worker must run in
 a separate process for queued tasks to progress. API responses include a
 correlation ID for HTTP and validation errors.
+Mutation rate limits return 429 and `Retry-After`. Unexpected errors return a
+generic 500 body with a correlation ID; exception text is not sent to the client.
 
 Started tasks include `deadline_at`. `TASK_TIMEOUT_SECONDS` defaults to 3600
 and may be set from 60 to 86400. The deadline prevents new tool dispatch and
