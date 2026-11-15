@@ -1,6 +1,8 @@
 """Single-machine durable worker. Run separately: python -m app.worker."""
 import json
+import multiprocessing
 import time
+from collections.abc import Callable
 from datetime import UTC, timedelta
 from uuid import uuid4
 
@@ -17,7 +19,7 @@ from app.tool_policy import ToolDenied, approval_scope, validate_invocation
 from app.tool_runner import run_tool
 
 
-def run_once(db: Session) -> bool:
+def run_once(db: Session, tool_start: Callable[[str, str], None] | None = None) -> bool:
     begin_write(db)
     expired = and_(Task.deadline_at.is_not(None), Task.deadline_at <= utc_now())
     task = db.scalar(select(Task).options(selectinload(Task.steps)).where(or_(Task.state.in_(["queued", "running", "pausing"]), and_(Task.state.in_(["waiting_approval", "paused"]), expired))).order_by(case((expired, 0), (Task.state == "pausing", 1), (Task.state == "queued", 2), else_=3), Task.created_at, Task.id))
@@ -143,6 +145,8 @@ def run_once(db: Session) -> bool:
             return True
     try:
         spec = REGISTRY[step.tool_name]
+        if tool_start is not None:
+            tool_start(step.id, step.tool_name)
         try:
             result = spec.output.model_validate(run_tool(db, task, step)).model_dump()
         except ValidationError as exc:
@@ -182,6 +186,105 @@ def run_once(db: Session) -> bool:
     return True
 
 
+def _run_once_process(sender) -> None:
+    try:
+        with SessionLocal() as db:
+            worked = run_once(db, lambda step_id, name: sender.send(("started", step_id, name)))
+        sender.send(("done", worked))
+    except Exception as exc:  # noqa: BLE001 - isolate unexpected child failures
+        sender.send(("error", type(exc).__name__))
+    finally:
+        sender.close()
+
+
+def _record_tool_timeout(step_id: str, tool_name: str) -> None:
+    with SessionLocal() as db:
+        begin_write(db)
+        step = db.get(PlanStep, step_id)
+        if step is None or step.state != "running":
+            db.commit()
+            return
+        execution = db.scalar(select(Execution).where(Execution.step_id == step_id, Execution.status == "running"))
+        if execution is None:
+            db.commit()
+            return
+        task = db.get(Task, step.task_id)
+        review = REGISTRY[tool_name].retry == "manual_review"
+        step.state = "needs_review" if review else "failed"
+        execution.status = step.state
+        execution.error_code = "ToolTimeout"
+        execution.ended_at = utc_now()
+        if task.state in {"running", "pausing"}:
+            transition(task, "failed")
+        record_event(db, task.id, "tool_timeout", {"step_id": step.id, "tool_name": tool_name, "timeout_seconds": REGISTRY[tool_name].timeout_seconds, "needs_review": review})
+        db.commit()
+
+
+def run_once_bounded(child_target=None) -> bool:
+    context = multiprocessing.get_context("spawn")
+    receiver, sender = context.Pipe(duplex=False)
+    process = context.Process(target=child_target or _run_once_process, args=(sender,))
+    process.start()
+    sender.close()
+    started: tuple[str, str] | None = None
+    deadline = time.monotonic() + 30
+    worked = False
+    try:
+        while process.is_alive():
+            try:
+                available = receiver.poll(0.05)
+            except (BrokenPipeError, OSError):
+                available = False
+            if available:
+                try:
+                    message = receiver.recv()
+                except EOFError:
+                    break
+                if message[0] == "started":
+                    started = (message[1], message[2])
+                    deadline = time.monotonic() + REGISTRY[message[2]].timeout_seconds
+                elif message[0] == "done":
+                    worked = message[1]
+                elif message[0] == "error":
+                    print(f"Worker action failed: {message[1]}")
+            if time.monotonic() >= deadline:
+                process.terminate()
+                process.join(timeout=2)
+                if process.is_alive():
+                    process.kill()
+                    process.join(timeout=2)
+                if process.is_alive():
+                    raise RuntimeError("Tool child could not be terminated")
+                if started is not None:
+                    _record_tool_timeout(*started)
+                    return True
+                return False
+        process.join()
+        while True:
+            try:
+                available = receiver.poll()
+            except (BrokenPipeError, OSError):
+                break
+            if not available:
+                break
+            try:
+                message = receiver.recv()
+            except EOFError:
+                break
+            if message[0] == "done":
+                worked = message[1]
+            elif message[0] == "error":
+                print(f"Worker action failed: {message[1]}")
+        return worked
+    finally:
+        receiver.close()
+        if process.is_alive():
+            process.kill()
+            process.join(timeout=2)
+        if process.is_alive():
+            raise RuntimeError("Tool child could not be terminated")
+
+
 def main() -> None:
     worker_id = str(uuid4())
     while True:
@@ -193,7 +296,12 @@ def main() -> None:
             else:
                 heartbeat.last_seen_at = utc_now()
             db.commit()
-            worked = run_once(db)
+            expired = and_(Task.deadline_at.is_not(None), Task.deadline_at <= utc_now())
+            pending = db.scalar(select(Task.id).where(or_(Task.state.in_(["queued", "running", "pausing"]), and_(Task.state.in_(["waiting_approval", "paused"]), expired))).limit(1)) is not None
+        if not pending:
+            time.sleep(1)
+            continue
+        worked = run_once_bounded()
         if not worked:
             time.sleep(1)
 

@@ -43,9 +43,10 @@ The API exposes bounded receipts without returning read-file contents.
 
 The [tool registry](../services/api/app/registry.py) declares each tool's
 parameters, output schema, risk, retry mode, attempt limit, and resource
-bounds. The current
-implementation supports selected text files and Markdown reports. The
-declared tool timeout is not yet a hard process timeout. A persisted task
-deadline defaults to one hour and prevents new actions after expiry. It does
-not interrupt an in-flight tool. External network fetch remains future
-security work.
+bounds. The current implementation supports selected text files and Markdown
+reports. The
+production worker supervises each action in a child process. It starts the
+registry timeout when the child enters the tool, terminates a stalled child,
+and records a durable timeout outcome. Uncertain writes still require report
+reconciliation. A persisted task deadline defaults to one hour and prevents
+new actions after expiry. External network fetch remains future security work.

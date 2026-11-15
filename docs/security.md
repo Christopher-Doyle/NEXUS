@@ -8,14 +8,17 @@ The worker executes registered `read_file`, `search_local_docs`, and
 `write_report` operations only.
 It validates the tool grant, typed arguments and argument hash at dispatch.
 The registry also validates the output shape and serialized size before an
-execution result is persisted. Registered timeouts are not yet hard process
-deadlines.
+execution result is persisted. The production worker runs each action in a
+killable child process and applies the registry timeout after the tool starts.
+A timed-out read fails with `ToolTimeout`; a timed-out write becomes
+`needs_review` and uses the existing exact-file reconciliation workflow.
 Tool receipts retain the version used at dispatch. The receipt endpoint
 revalidates stored result schemas and omits source file contents from API
 responses; the local database still contains read text needed for reports.
 Started tasks have a persisted dispatch deadline, one hour by default. The
 worker fails expired tasks before scheduling another tool, and an approval or
-report write rechecks the deadline. A tool already in progress may finish.
+report write rechecks the deadline. A tool already in progress can continue
+until its separate registered tool timeout.
 Reads resolve the canonical path under the task workspace, reject symlink
 escapes, and cap Markdown/text files at 64 KiB. Uploaded text inputs are
 bounded to five files. Approved folders must exactly match the operator's

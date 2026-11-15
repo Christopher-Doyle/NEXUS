@@ -44,6 +44,9 @@ generic 500 body with a correlation ID; exception text is not sent to the client
 Started tasks include `deadline_at`. `TASK_TIMEOUT_SECONDS` defaults to 3600
 and may be set from 60 to 86400. The deadline prevents new tool dispatch and
 approval after expiry; it does not interrupt an in-flight operation.
+The separate registry timeout kills a stalled worker child. Execution receipts
+record `ToolTimeout`; the journal emits `tool_timeout`. A report timeout
+requires recovery inspection before the file is accepted or confirmed absent.
 
 `search_local_docs` is a read-only plan tool. It searches only the task's
 selected Markdown and text files, returning at most 20 line excerpts. A user

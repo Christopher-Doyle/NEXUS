@@ -35,14 +35,14 @@ def test_malformed_read_receipt_is_denied_before_report_write(tmp_path) -> None:
     engine.dispose()
 
 
-@pytest.mark.parametrize("file_state", ["matches", "matches_with_followup", "matches_expired_followup", "absent", "mismatch", "unsafe"])
+@pytest.mark.parametrize("file_state", ["matches", "matches_with_followup", "matches_expired_followup", "matches_cancelled", "absent", "mismatch", "unsafe"])
 def test_operator_resolves_only_verified_uncertain_report(tmp_path, monkeypatch, file_state) -> None:
     engine = make_engine(f"sqlite:///{tmp_path / 'recovery.db'}")
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     source = (DEMO_WORKSPACE / "brief.md").read_text(encoding="utf-8")
     with factory() as db:
-        task = Task(goal="Resolve an uncertain report", state="failed", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file","write_report"]', input_files_json='["brief.md"]', plan_version=1, deadline_at=utc_now() - timedelta(seconds=1) if file_state == "matches_expired_followup" else None)
+        task = Task(goal="Resolve an uncertain report", state="cancelled" if file_state == "matches_cancelled" else "failed", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file","write_report"]', input_files_json='["brief.md"]', plan_version=1, deadline_at=utc_now() - timedelta(seconds=1) if file_state == "matches_expired_followup" else None)
         db.add(task)
         db.flush()
         read = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="completed")
@@ -84,7 +84,7 @@ def test_operator_resolves_only_verified_uncertain_report(tmp_path, monkeypatch,
             assert client.post(f"/api/v1/tasks/{task_id}/recovery", headers=headers, json={**body, "expected_sha256": "0" * 64}).status_code == 409
             resolved = client.post(f"/api/v1/tasks/{task_id}/recovery", headers=headers, json=body)
             assert resolved.status_code == 200
-            expected_state = "queued" if file_state == "matches_with_followup" else "failed" if file_state == "matches_expired_followup" else "completed"
+            expected_state = "queued" if file_state == "matches_with_followup" else "failed" if file_state == "matches_expired_followup" else "cancelled" if file_state == "matches_cancelled" else "completed"
             assert resolved.json()["task_state"] == expected_state
             artifacts = client.get(f"/api/v1/tasks/{task_id}/artifacts").json()
             assert len(artifacts) == 1

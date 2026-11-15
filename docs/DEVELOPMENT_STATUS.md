@@ -37,6 +37,10 @@ application or passing all security gates.
 - A configurable one-hour default task dispatch deadline is stored with each
   started task. Expired queued, paused and approval-waiting tasks fail before
   another tool action; approval and report-write boundaries recheck it.
+- The production worker supervises each action in a killable child process.
+  A tool's registered five-second timeout begins at the tool call. Timed-out
+  reads fail with `ToolTimeout`; uncertain report writes stop for reconciliation,
+  whether a file was created or not.
 - Dashboard, task composer, plan review, execution cockpit and persisted task
   history with search, status filtering and pagination. The cockpit includes a
   timeline, approval controls, journal and artifact links.
@@ -65,10 +69,12 @@ application or passing all security gates.
   remains unused and off in the web client.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
-  per task. The new deadline stops future tool dispatch, but does not kill an
-  in-flight read or write. Pause/cancel during reads and cancellation at the
+  per task. The task deadline stops future tool dispatch; the registered tool
+  timeout kills a stalled action. Pause/cancel during reads and cancellation at the
   report write boundary are covered by tests.
-- Tool timeouts are declared but not yet enforced as hard process deadlines.
+- The supervisor has a 30-second startup bound before a tool reports its
+  start. A child lost before that point still uses the durable lease recovery
+  path; broader process fault injection remains a release gate.
 - The primary approved and rejected workflows pass isolated Playwright tests
   from a fresh migrated database. Automated WCAG A/AA checks pass on the
   dashboard, task form, settings, plan review and completed cockpit. Manual
@@ -83,7 +89,7 @@ application or passing all security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
-- `python -m pytest -q`: 68 backend tests passed, three symlink tests skipped on
+- `python -m pytest -q`: 73 backend tests passed, three symlink tests skipped on
   this Windows host, one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -137,8 +143,11 @@ application or passing all security gates.
   configured deadline.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
+- Timeout tests terminate stalled read and report child processes, preserve
+  cancellation, and verify before-write and after-write reconciliation.
+  The six browser tests pass with the supervised production worker.
 
-Remote CI passed all three jobs for accessibility checks (`49a564c`).
+Remote CI passed all three jobs for filesystem hardening (`9f85830`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -148,8 +157,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `49a564c` (automated
-accessibility checks). Filesystem path hardening: commit and push pending.
+Latest pushed commit before this checkpoint: `9f85830` (filesystem path and
+retention hardening). Supervised tool timeouts: commit and push pending.
 
 ## Known risks
 
@@ -161,6 +170,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push filesystem path hardening in CI. Then tackle remaining
-release gates: tool process timeouts, manual accessibility review,
-comprehensive security review, platform paths, and performance evidence.
+Verify and push supervised tool timeouts in CI. Then complete the security
+audit, manual accessibility review, performance evidence and clean-clone
+release checks.

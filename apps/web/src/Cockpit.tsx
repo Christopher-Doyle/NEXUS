@@ -20,7 +20,7 @@ export function Cockpit() {
   const journal = useQuery({ queryKey: ['journal', id], queryFn: () => api.journal(id!), enabled: Boolean(id) })
   const executions = useQuery({ queryKey: ['executions', id], queryFn: () => api.executions(id!), enabled: Boolean(id) })
   const artifacts = useQuery({ queryKey: ['artifacts', id], queryFn: () => api.artifacts(id!), enabled: Boolean(id) })
-  const needsRecovery = task.data?.state === 'failed' && task.data.steps.some(step => step.state === 'needs_review')
+  const needsRecovery = ['failed', 'cancelled'].includes(task.data?.state || '') && task.data?.steps.some(step => step.state === 'needs_review')
   const recovery = useQuery({ queryKey: ['recovery', id], queryFn: () => api.recovery(id!), enabled: Boolean(id && needsRecovery) })
   const decision = useMutation({ mutationFn: ({ approval, value }: { approval: Approval; value: 'approved' | 'rejected' }) => api.decide(approval, value), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['task', id] }); queryClient.invalidateQueries({ queryKey: ['approvals'] }) } })
   const cancel = useMutation({ mutationFn: () => api.cancelTask(id!), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['task', id] }) })

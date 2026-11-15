@@ -35,7 +35,7 @@ def inspect_recovery(db: Session, task_id: str) -> tuple[Task, PlanStep, Executi
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     step = db.scalar(select(PlanStep).where(PlanStep.task_id == task_id, PlanStep.tool_name == "write_report", PlanStep.state == "needs_review"))
-    if task.state != "failed" or step is None:
+    if task.state not in {"failed", "cancelled"} or step is None:
         raise HTTPException(status_code=409, detail="No uncertain report write requires review")
     execution = db.scalar(select(Execution).where(Execution.step_id == step.id, Execution.status == "needs_review"))
     if execution is None:
@@ -84,11 +84,11 @@ def resolve_recovery(task_id: str, body: RecoveryDecision, db: DbSession) -> dic
         execution.result_json = json.dumps(WriteReportResult(artifact_id=artifact.id, filename=target.name, sha256=artifact.sha256).model_dump())
         execution.status = "completed"
         step.state = "completed"
-        if all(item.state == "completed" for item in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id))):
+        if task.state != "cancelled" and all(item.state == "completed" for item in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id))):
             task.state = "completed"
             task.updated_at = utc_now()
             task.completed_at = task.updated_at
-        elif not deadline_expired(task):
+        elif task.state != "cancelled" and not deadline_expired(task):
             task.state = "queued"
             task.updated_at = utc_now()
             task.completed_at = None
