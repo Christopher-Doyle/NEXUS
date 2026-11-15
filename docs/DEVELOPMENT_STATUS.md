@@ -82,8 +82,8 @@ application or passing all security gates.
 - The primary approved and rejected workflows pass isolated Playwright tests
   from a fresh migrated database. Automated WCAG A/AA checks pass on the
   dashboard, task form, settings, plan review and completed cockpit. Manual
-  keyboard and assistive technology review and a clean-checkout installation
-  outside CI remain unverified. The opt-in browser Ollama plan test passed.
+  keyboard and assistive technology review remain unverified. The separate
+  clean-checkout setup and opt-in browser Ollama plan test passed.
 - The local security review documents remaining limitations. There is no
   automatic retention schedule or bulk task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
@@ -96,9 +96,11 @@ application or passing all security gates.
 - A separate local checkout succeeded. Offline installation found uncached
   packages; after approval, `uv sync --extra dev` and `npm ci` installed the
   lockfile dependencies. The clean frontend production build and all seven
-  documented database migrations passed. The
-  initial backend run found a line-ending assumption in a report assertion;
-  it has been corrected for the next clean-checkout run.
+  documented database migrations passed. The initial backend run found a
+  line-ending assumption in a report assertion. After correcting it and
+  updating the checkout to `13e1643`, 77 backend tests passed with three
+  Windows symlink skips; Ruff, three frontend tests and six standard browser
+  tests passed (one opt-in Ollama test skipped).
 - `python -m pytest -q`: 77 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
@@ -164,7 +166,7 @@ application or passing all security gates.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
 
-Remote CI passed all three jobs for task history export (`28d7c73`).
+Remote CI passed all three jobs for the request-size checkpoint (`13e1643`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -175,8 +177,8 @@ model-generated plan remains unverified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `20463da` (Ollama browser plan
-test). The request-size cap and clean-checkout test fix are pending commit.
+Latest pushed commit before this checkpoint: `13e1643` (request body limit and
+line-ending-independent report test). Clean-checkout verification is complete.
 
 ## Known risks
 
@@ -189,6 +191,5 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the request-size cap and line-ending-independent test. Pull
-the new commit into the clean checkout, rerun tests and migrations, then
-continue with manual accessibility and performance gates.
+Commit the clean-checkout verification record and continue with keyboard,
+assistive technology and performance release gates.
