@@ -53,3 +53,6 @@ executes approved and rejected synthetic workflows, then stops services and
 removes its own test data. Ports 8765 and 5173 must be available. Set
 `NEXUS_PYTHON` to a Python executable if the API virtual environment is not
 at `services/api/.venv`.
+The browser suite includes automated WCAG A/AA checks through the reviewed
+open-source `@axe-core/playwright` development dependency. Automated checks
+do not replace keyboard and assistive technology review.

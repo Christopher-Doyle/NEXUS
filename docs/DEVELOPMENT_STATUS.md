@@ -65,7 +65,9 @@ application or passing all security gates.
   report write boundary are covered by tests.
 - Tool timeouts are declared but not yet enforced as hard process deadlines.
 - The primary approved and rejected workflows pass isolated Playwright tests
-  from a fresh migrated database. Accessibility, a clean-clone installation
+  from a fresh migrated database. Automated WCAG A/AA checks pass on the
+  dashboard, task form, settings, plan review and completed cockpit. Manual
+  keyboard and assistive technology review, a clean-clone installation
   outside CI and the browser Ollama flow remain unverified.
 - Error handling and logging need a full security review. There is no
   automatic retention schedule or task export UI yet.
@@ -81,9 +83,11 @@ application or passing all security gates.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
-- `npm run test:e2e`: three browser tests passed with installed Chrome, fresh
+- `npm run test:e2e`: six browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
+  Automated WCAG A/AA checks pass on five core views after correcting the
+  plan reorder buttons' accessible names.
 - `npm audit`: zero vulnerabilities after updating Vitest.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
@@ -122,7 +126,7 @@ application or passing all security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for resumed recovery (`8831c50`).
+Remote CI passed all three jobs for mobile browser coverage (`8fc88c5`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -132,8 +136,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `8831c50` (resumed multi-step
-recovery). Mobile browser coverage: commit and push pending.
+Latest pushed commit before this checkpoint: `8fc88c5` (mobile browser
+coverage). Automated accessibility checks: commit and push pending.
 
 ## Known risks
 
@@ -145,6 +149,6 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push mobile browser coverage in CI. Then tackle remaining release
-gates: tool process timeouts, accessibility, comprehensive security review,
-platform paths, and performance evidence.
+Verify and push automated accessibility checks in CI. Then tackle remaining
+release gates: tool process timeouts, manual accessibility review,
+comprehensive security review, platform paths, and performance evidence.

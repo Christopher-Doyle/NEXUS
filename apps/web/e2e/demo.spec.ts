@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 
 test('approved demo completes with a report and persisted history', async ({ page }) => {
@@ -6,6 +7,8 @@ test('approved demo completes with a report and persisted history', async ({ pag
   await page.getByRole('button', { name: 'Create task' }).click()
   await page.getByRole('button', { name: 'Generate plan' }).click()
   await expect(page.getByRole('heading', { name: 'Review the steps.' })).toBeVisible()
+  const planA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+  expect(planA11y.violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => ({ target: node.target, html: node.html })) }))).toEqual([])
   await page.getByRole('button', { name: 'Start approved plan' }).click()
   await expect(page.getByRole('heading', { name: 'Approval required' })).toBeVisible()
   await page.getByRole('button', { name: 'Approve write' }).click()
@@ -19,6 +22,8 @@ test('approved demo completes with a report and persisted history', async ({ pag
   const report = await page.request.get(new URL(reportUrl!, page.url()).toString())
   expect(report.ok()).toBeTruthy()
   expect(await report.text()).toContain('## Citations')
+  const cockpitA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+  expect(cockpitA11y.violations.map(item => item.id)).toEqual([])
   await page.getByRole('link', { name: 'History' }).click()
   await expect(page.getByRole('link', { name: 'Read the sample project notes and generate a structured report.' })).toBeVisible()
 })
@@ -48,3 +53,12 @@ test('mobile settings remain usable and persist a deadline', async ({ page }) =>
   await expect(deadline).toHaveValue('1200')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
+
+for (const path of ['/', '/tasks/new', '/settings']) {
+  test(`core page ${path} has no automated WCAG A or AA findings`, async ({ page }) => {
+    await page.goto(path)
+    if (path === '/settings') await expect(page.getByRole('button', { name: 'Save settings' })).toBeVisible()
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+    expect(results.violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => node.target) }))).toEqual([])
+  })
+}
