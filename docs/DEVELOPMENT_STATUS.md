@@ -25,7 +25,8 @@ number does not imply a 60% complete release or passing security gates.
   bounded search of selected local files, and approval-gated Markdown report write.
 - Explicit registry declares each tool's version, input and output schema,
   permission, risk, timeout, output limit, retry and idempotency behavior.
-  Worker responses are schema-checked and size-bounded before persistence.
+  Safe reads have at most three total attempts. Worker responses are
+  schema-checked and size-bounded before persistence.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
 - Exported Markdown reports include numbered source citations, line ranges
@@ -90,6 +91,8 @@ number does not imply a 60% complete release or passing security gates.
 - Report export test: source citations include line ranges and verified read
   hashes; a tampered read receipt prevents an artifact. Browser E2E checks
   the downloaded report contains its citation section.
+- Expired read lease recovery stops with `RetryExhausted` after the third
+  attempt, without dispatching another tool call.
 - Artifact and deletion-directory symlink redirection is rejected in code.
   The real symlink tests are skipped locally because directory symlinks are
   unavailable here; Linux CI will exercise them.
@@ -100,7 +103,7 @@ number does not imply a 60% complete release or passing security gates.
 - API error tests: local mutation rate limiting returns `Retry-After`; an
   unexpected failure returns a correlation ID without exposing exception text.
 
-Remote CI passed all three jobs for the isolated browser demo (`7e52681`).
+Remote CI passed all three jobs for citation export (`b1aa4cd`).
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -110,8 +113,8 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `7e52681` (isolated browser
-demo and P0 traceability). Citation export: commit and push pending.
+Latest pushed commit before this checkpoint: `b1aa4cd` (verified report
+citations). Bounded safe-read retries: commit and push pending.
 
 ## Known risks
 
@@ -123,5 +126,5 @@ text without treating it as instructions or making unsupported claims.
 
 ## Exact next task
 
-Verify and push citation export in CI. Then complete the remaining P0
-acceptance checks, starting with worker recovery and manual resolution.
+Verify and push bounded safe-read retries in CI. Then test crash recovery and
+build the uncertain-write manual resolution workflow.

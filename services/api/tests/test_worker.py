@@ -176,6 +176,31 @@ def test_recovery_replays_read_but_stops_uncertain_write(tmp_path) -> None:
     engine.dispose()
 
 
+def test_expired_read_lease_stops_after_three_attempts(tmp_path, monkeypatch) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'attempts.db'}")
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, expire_on_commit=False)
+    with factory() as db:
+        task = Task(goal="Stop replaying", state="running", workspace_path=str(DEMO_WORKSPACE), capabilities_json='["read_file"]', input_files_json='["brief.md"]', plan_version=1)
+        db.add(task)
+        db.flush()
+        step = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="running")
+        db.add(step)
+        db.flush()
+        execution = Execution(step_id=step.id, attempt=3, idempotency_key=approval_scope(task, step), status="running", lease_until=utc_now() - timedelta(seconds=1))
+        db.add(execution)
+        db.commit()
+    monkeypatch.setattr("app.worker.run_tool", lambda *_: pytest.fail("Exhausted read must not execute"))
+    with factory() as db:
+        assert run_once(db)
+        assert db.get(Task, task.id).state == "failed"
+        assert db.get(PlanStep, step.id).state == "failed"
+        assert db.get(Execution, execution.id).error_code == "RetryExhausted"
+        assert db.get(Execution, execution.id).attempt == 3
+        assert not run_once(db)
+    engine.dispose()
+
+
 def test_simultaneous_workers_do_not_repeat_a_leased_read(tmp_path, monkeypatch) -> None:
     engine = make_engine(f"sqlite:///{tmp_path / 'concurrent.db'}")
     Base.metadata.create_all(engine)

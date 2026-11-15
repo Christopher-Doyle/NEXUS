@@ -62,13 +62,14 @@ class ToolSpec:
     max_output_bytes: int
     resource_limits: dict[str, int]
     retry: Literal["safe_read", "manual_review"]
+    max_attempts: int
     idempotency: Literal["repeatable", "exclusive_create"]
 
 
 REGISTRY = {
-    "read_file": ToolSpec("read_file", "1", "Read one selected Markdown or text file", ReadFileArgs, ReadFileResult, "read_file", "low", 5, 400000, {"file_bytes": 65536}, "safe_read", "repeatable"),
-    "search_local_docs": ToolSpec("search_local_docs", "1", "Search up to five selected local text files", SearchLocalDocsArgs, SearchLocalDocsResult, "search_local_docs", "low", 5, 32768, {"files": 5, "file_bytes": 65536, "matches": 20}, "safe_read", "repeatable"),
-    "write_report": ToolSpec("write_report", "1", "Create one approved Markdown artifact", WriteReportArgs, WriteReportResult, "write_report", "high", 5, 1024, {"source_files": 5, "report_bytes": 400000}, "manual_review", "exclusive_create"),
+    "read_file": ToolSpec("read_file", "1", "Read one selected Markdown or text file", ReadFileArgs, ReadFileResult, "read_file", "low", 5, 400000, {"file_bytes": 65536}, "safe_read", 3, "repeatable"),
+    "search_local_docs": ToolSpec("search_local_docs", "1", "Search up to five selected local text files", SearchLocalDocsArgs, SearchLocalDocsResult, "search_local_docs", "low", 5, 32768, {"files": 5, "file_bytes": 65536, "matches": 20}, "safe_read", 3, "repeatable"),
+    "write_report": ToolSpec("write_report", "1", "Create one approved Markdown artifact", WriteReportArgs, WriteReportResult, "write_report", "high", 5, 1024, {"source_files": 5, "report_bytes": 400000}, "manual_review", 1, "exclusive_create"),
 }
 
 ARG_SCHEMAS = {name: spec.parameters for name, spec in REGISTRY.items()}

@@ -68,6 +68,15 @@ def run_once(db: Session) -> bool:
             record_event(db, task.id, "execution_uncertain", {"step_id": step.id})
             db.commit()
             return True
+        if execution.attempt >= REGISTRY[step.tool_name].max_attempts:
+            step.state = "failed"
+            execution.status = "failed"
+            execution.error_code = "RetryExhausted"
+            execution.ended_at = utc_now()
+            transition(task, "failed")
+            record_event(db, task.id, "execution_retry_exhausted", {"step_id": step.id, "attempts": execution.attempt})
+            db.commit()
+            return True
         execution.attempt += 1
         execution.started_at = utc_now()
         execution.lease_until = utc_now() + timedelta(seconds=60)

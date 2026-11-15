@@ -16,12 +16,15 @@ def test_every_registered_tool_declares_a_bounded_contract() -> None:
         assert spec.name == spec.capability == name
         assert spec.version and spec.description
         assert spec.timeout_seconds > 0
+        assert spec.max_attempts > 0
         assert spec.max_output_bytes > 0
         assert spec.resource_limits and all(value > 0 for value in spec.resource_limits.values())
         assert spec.parameters.model_config["extra"] == "forbid"
         assert spec.output.model_config["extra"] == "forbid"
     assert REGISTRY["write_report"].risk == "high"
     assert REGISTRY["write_report"].retry == "manual_review"
+    assert REGISTRY["write_report"].max_attempts == 1
+    assert REGISTRY["read_file"].max_attempts == 3
     assert REGISTRY["write_report"].idempotency == "exclusive_create"
 
 
