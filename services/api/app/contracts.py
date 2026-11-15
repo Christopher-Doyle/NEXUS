@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -15,7 +15,7 @@ class InputFile(BaseModel):
 class TaskCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     goal: str = Field(min_length=8, max_length=4000)
-    constraints: list[str] = Field(default_factory=list, max_length=12)
+    constraints: list[Annotated[str, Field(max_length=500)]] = Field(default_factory=list, max_length=12)
     success_criteria: str | None = Field(default=None, max_length=2000)
     capabilities: list[Capability] = Field(default_factory=lambda: ["read_file", "search_local_docs", "write_report"], max_length=3)
     network_access: bool = False

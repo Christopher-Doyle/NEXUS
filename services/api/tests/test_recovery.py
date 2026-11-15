@@ -35,6 +35,26 @@ def test_malformed_read_receipt_is_denied_before_report_write(tmp_path) -> None:
     engine.dispose()
 
 
+def test_report_escapes_untrusted_html_in_goal_and_source(tmp_path) -> None:
+    engine = make_engine(f"sqlite:///{tmp_path / 'html.db'}")
+    Base.metadata.create_all(engine)
+    with sessionmaker(bind=engine)() as db:
+        task = Task(goal="Summarize <script>alert(1)</script>", state="running", workspace_path=str(DEMO_WORKSPACE))
+        db.add(task)
+        db.flush()
+        read = PlanStep(task_id=task.id, ordinal=1, description="Read brief", tool_name="read_file", args_json='{"path":"brief.md"}', args_hash=args_hash({"path": "brief.md"}), risk_level="low", state="completed")
+        db.add(read)
+        db.flush()
+        content = "<script>alert(2)</script>\n# Untrusted heading"
+        db.add(Execution(step_id=read.id, attempt=1, idempotency_key=approval_scope(task, read), status="completed", result_json=json.dumps({"source": "brief.md", "content": content, "sha256": hashlib.sha256(content.encode()).hexdigest()})))
+        db.flush()
+        report = report_bytes(db, task).decode("utf-8")
+        assert "<script>" not in report
+        assert "&lt;script&gt;" in report
+        assert "> # Untrusted heading" in report
+    engine.dispose()
+
+
 @pytest.mark.parametrize("file_state", ["matches", "matches_with_followup", "matches_expired_followup", "matches_cancelled", "absent", "mismatch", "unsafe"])
 def test_operator_resolves_only_verified_uncertain_report(tmp_path, monkeypatch, file_state) -> None:
     engine = make_engine(f"sqlite:///{tmp_path / 'recovery.db'}")

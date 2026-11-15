@@ -93,6 +93,8 @@ def replace_steps(db: Session, task: Task, steps: list[StepInput]) -> None:
 
 @router.post("", response_model=TaskView, status_code=201)
 def create_task(body: TaskCreate, db: DbSession) -> TaskView:
+    if body.network_access:
+        raise HTTPException(status_code=422, detail="Network tools are not enabled")
     if body.workspace_path and body.input_files:
         raise HTTPException(status_code=422, detail="Choose an approved folder or attach files, not both")
     task_id = new_id()
@@ -121,8 +123,10 @@ def create_task(body: TaskCreate, db: DbSession) -> TaskView:
         try:
             for name in files:
                 workspace_file(str(selected), name)
-        except (ToolDenied, OSError) as exc:
+        except ToolDenied as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except OSError as exc:
+            raise HTTPException(status_code=422, detail="Selected file could not be inspected") from exc
         workspace = selected
     elif body.input_files:
         files = [item.name for item in body.input_files]
@@ -189,8 +193,10 @@ def remove_task(task_id: str, body: TaskDelete, db: DbSession) -> None:
         raise HTTPException(status_code=409, detail="Cancel the active task before deleting it")
     try:
         delete_task(db, task, get_settings().data_dir)
-    except (OSError, RetentionError) as exc:
+    except RetentionError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail="Task cleanup failed; inspect the local log") from exc
 
 
 @router.post("/{task_id}/plan", response_model=TaskView, status_code=202)

@@ -27,7 +27,8 @@ alternate-stream syntax is rejected. Relative read paths reject those forms,
 traversal and control characters on both Windows and Linux. Reads compare the
 opened file identity with the validated file before reading, so a path swap
 between validation and open is denied. Search examines only those selected files and
-returns at most 20 line excerpts. Network access is not implemented.
+returns at most 20 line excerpts. Network access is not implemented, and task
+creation rejects `network_access=true`.
 
 Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file
@@ -65,6 +66,7 @@ fully race resistant.
 
 Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.
+The exported Markdown escapes HTML in the goal, source paths and quoted text.
 Ollama is restricted to a configured loopback HTTP origin. No paid API or
 telemetry is required.
 
@@ -85,3 +87,6 @@ Mutating requests are limited in process to 120 per minute, with a separate
 This is a local resource safeguard, not a distributed or durable security
 boundary. Unexpected exceptions return a generic 500 with a correlation ID;
 the local log records only the exception type and correlation ID.
+Filesystem failures recorded in task journals use generic text rather than
+raw OS exception paths. The severity-ranked review and residual risks are in
+[the security audit](security-audit.md).

@@ -62,6 +62,10 @@ application or passing all security gates.
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
+- Security review fixes reject unavailable network access, bound each task
+  constraint, redact filesystem exceptions from journal errors and escape
+  untrusted HTML in exported reports. Findings and open risks are tracked in
+  [the local security review](security-audit.md).
 
 ## Incomplete
 
@@ -80,7 +84,7 @@ application or passing all security gates.
   dashboard, task form, settings, plan review and completed cockpit. Manual
   keyboard and assistive technology review, a clean-clone installation
   outside CI and the browser Ollama flow remain unverified.
-- Error handling and logging need a full security review. There is no
+- The local security review documents remaining limitations. There is no
   automatic retention schedule or task export UI yet.
 - The supplied PDF expresses an MIT licence intention, but no licence has been
   added without an explicit owner decision.
@@ -89,8 +93,8 @@ application or passing all security gates.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
-- `python -m pytest -q`: 73 backend tests passed, three symlink tests skipped on
-  this Windows host, one dependency deprecation warning.
+- `python -m pytest -q`: 76 passed, three symlink skips on this Windows host,
+  one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
@@ -146,8 +150,11 @@ application or passing all security gates.
 - Timeout tests terminate stalled read and report child processes, preserve
   cancellation, and verify before-write and after-write reconciliation.
   The six browser tests pass with the supervised production worker.
+- Security tests cover Host, Origin and intent rejection, explicit network
+  denial, bounded constraints, HTML escaping and journal path redaction.
 
-Remote CI passed all three jobs for filesystem hardening (`9f85830`).
+Remote CI passed all three jobs for supervised timeouts (`2a374a8`);
+the security-review commit is pending its remote run.
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -157,19 +164,19 @@ journey has not yet been verified.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `9f85830` (filesystem path and
-retention hardening). Supervised tool timeouts: commit and push pending.
+Latest pushed commit before this checkpoint: `2a374a8` (supervised tool
+timeouts). Local security audit and fixes: commit and push pending.
 
 ## Known risks
 
 Local Host, Origin and explicit intent checks protect mutations in the
 single-owner development setup; they are not remote authentication. The
-worker stops uncertain writes
-for manual review but has no UI to resolve them. The report quotes local source
-text without treating it as instructions or making unsupported claims.
+worker stops uncertain writes for operator reconciliation in the cockpit.
+The report quotes and escapes local source text without treating it as
+instructions or making unsupported claims. App-owned report writes still
+have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Verify and push supervised tool timeouts in CI. Then complete the security
-audit, manual accessibility review, performance evidence and clean-clone
-release checks.
+Push the tested security-review fixes and verify remote CI. Continue with
+clean-checkout setup, manual accessibility and performance gates.

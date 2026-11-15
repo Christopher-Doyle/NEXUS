@@ -53,6 +53,10 @@ def test_task_planning_and_editing(tmp_path) -> None:
         headers = {"x-nexus-intent": "local", "origin": "http://127.0.0.1:5173"}
         blocked = client.post("/api/v1/tasks", json={"goal": "Create a sample report"})
         assert blocked.status_code == 403
+        network = client.post("/api/v1/tasks", headers=headers, json={"goal": "Request outbound fetch", "network_access": True})
+        assert network.status_code == 422
+        oversized = client.post("/api/v1/tasks", headers=headers, json={"goal": "Reject huge constraint", "constraints": ["x" * 501]})
+        assert oversized.status_code == 422
         created = client.post("/api/v1/tasks", headers=headers, json={"goal": "Create a sample report"})
         assert created.status_code == 201
         task_id = created.json()["id"]

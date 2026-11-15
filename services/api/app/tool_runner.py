@@ -1,4 +1,5 @@
 import hashlib
+import html
 import json
 from pathlib import Path
 
@@ -44,15 +45,15 @@ def report_bytes(db: Session, task: Task) -> bytes:
         readings.append(reading)
     if not readings:
         raise ToolDenied("A report requires at least one source reading")
-    lines = [f"# Report: {task.goal}", "", "Generated from local source files. The text below is extracted evidence, not a model-verified conclusion.", ""]
+    lines = [f"# Report: {html.escape(task.goal, quote=False)}", "", "Generated from local source files. The text below is extracted evidence, not a model-verified conclusion.", ""]
     for number, reading in enumerate(readings, start=1):
-        quoted_content = "\n".join(f"> {line}" for line in reading["content"].splitlines())
-        lines += [f"## Source [{number}]: {json.dumps(reading['path'])}", "", quoted_content, ""]
+        quoted_content = "\n".join(f"> {html.escape(line, quote=False)}" for line in reading["content"].splitlines())
+        lines += [f"## Source [{number}]: {html.escape(json.dumps(reading['path']), quote=False)}", "", quoted_content, ""]
     lines += ["## Citations", "", "Each citation identifies the exact text snapshot used above. Verify the SHA-256 against the source content in the task journal.", ""]
     for number, reading in enumerate(readings, start=1):
         line_count = len(reading["content"].splitlines())
         location = f"lines 1–{line_count}" if line_count else "empty file"
-        lines.append(f"[{number}] {json.dumps(reading['path'])}, {location}, SHA-256 `{reading['sha256']}`.")
+        lines.append(f"[{number}] {html.escape(json.dumps(reading['path']), quote=False)}, {location}, SHA-256 `{reading['sha256']}`.")
     data = "\n".join(lines).encode("utf-8")
     if len(data) > REGISTRY["write_report"].resource_limits["report_bytes"]:
         raise ToolDenied("Report exceeds the registered size limit")

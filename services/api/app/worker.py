@@ -181,7 +181,8 @@ def run_once(db: Session, tool_start: Callable[[str, str], None] | None = None) 
         db.refresh(task)
         if task.state in {"running", "pausing"}:
             transition(task, "failed")
-        record_event(db, task.id, "step_failed", {"step_id": step.id, "error": str(exc)[:300]})
+        public_error = str(exc)[:300] if isinstance(exc, ToolDenied) else "Tool failed while accessing a local file"
+        record_event(db, task.id, "step_failed", {"step_id": step.id, "error": public_error})
         db.commit()
     return True
 
