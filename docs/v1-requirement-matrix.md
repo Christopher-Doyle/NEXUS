@@ -1,0 +1,36 @@
+# Version 1 requirement audit
+
+Source: [design specification](design-spec.pdf), sections 02–13. This audit
+distinguishes a tested P0 baseline from the complete v1 acceptance contract.
+API `app/` and `test_*.py` paths below are relative to `services/api/`;
+other paths are repository-relative. "Partial" means the documented v1
+behavior or an acceptance check is still missing; it is not a release pass.
+
+| ID | Expected behavior | Implementation files | Automated evidence | Manual evidence | Status and limitation |
+| --- | --- | --- | --- | --- | --- |
+| NX-F01 | Create a task with goal, constraints and bounded optional inputs. | `app/contracts.py`, `app/tasks.py`, `apps/web/src/main.tsx` | `test_tasks.py`; browser demo | Task form used in local browser | Complete for local text inputs; folder grants remain operator-configured. |
+| NX-F02 | Produce and edit a numbered plan before execution. | `app/planning.py`, `app/ollama.py`, `app/tasks.py`, `apps/web/src/main.tsx` | `test_tasks.py`, `test_ollama.py`; browser plan review | Installed Ollama generated a reviewed plan | Complete for current allowlisted tools. |
+| NX-F03 | Validate each tool against schema and declared permission. | `app/registry.py`, `app/tool_policy.py`, `app/worker.py` | `test_registry.py`, `test_tasks.py`, `test_ollama.py` | Approval and denial shown in browser | Complete for current tools; fetch tool is missing. |
+| NX-F04 | Require approval for outbound requests and file writes. | `app/operations.py`, `app/worker.py`, `app/tasks.py` | Approval, cancellation and race tests; browser approved/rejected runs | Report approval verified in browser | **Partial:** writes are gated; outbound requests remain disabled because HTTPS fetch and SSRF controls are not implemented. |
+| NX-F05 | Show live states, logs and evidence. | `app/operations.py`, `apps/web/src/Cockpit.tsx`, `apps/web/src/main.tsx` | SSE and receipt tests; browser cockpit and axe checks | Local browser workflow and keyboard task-form path | **Partial:** no dedicated artifact diff/source viewer or full assistive technology review. |
+| NX-F06 | Persist journal and resume interrupted runs safely. | `app/models.py`, `app/worker.py`, `app/recovery.py` | `test_recovery.py`, `test_worker_process.py`, `test_timeout.py` | Recovery control visible in cockpit | Complete for local reads and reports; broader fault injection remains. |
+| NX-F07 | Export Markdown report with local citations. | `app/tool_runner.py`, `app/operations.py` | Report provenance and artifact download tests; browser report download | Downloaded report checked in browser | Complete for local source readings; report claims remain evidence excerpts, not fact verification. |
+| NX-F08 (P1) | Pluggable local read-only document search. | `app/registry.py`, `app/tool_runner.py`, `app/planning.py` | Search scope and bounds tests | Search evidence shown in cockpit | **Partial:** bounded local search works, but there is no provider plug-in interface. |
+| NX-F09 (P1) | Prompt/model configuration and replayable fixtures. | `app/preferences.py`, `app/ollama.py`, `fixtures/demo`, `apps/web/src/Settings.tsx` | Settings and model tests; isolated browser demo | Installed local model and deterministic demo verified | Complete for local model choice and fixtures; prompt template is not user-editable. |
+| NX-N01 | No default shell execution. | `app/registry.py`, `app/tool_policy.py` | Registry and policy tests | Tool list inspected | Complete; no shell tool registered. |
+| NX-N02 | Stable idempotency key for external actions. | `app/tool_policy.py`, `app/models.py`, `app/worker.py` | Crash/write/recovery tests | Report recovery shown in cockpit | Complete for current tools; future network action needs an explicit uncertain-outcome policy. |
+| NX-N03 | Offline deterministic demo without an LLM. | `app/planning.py`, `fixtures/demo`, `apps/web/e2e/demo.spec.ts` | Browser approved and rejected workflows | Local browser demo verified | Complete. |
+
+## Cross-cutting v1 acceptance
+
+| Specification area | Current evidence | Status and next work |
+| --- | --- | --- |
+| Section 03 UX | Dashboard, task form, plan, cockpit, history, artifacts and Settings routes; browser and axe checks | **Partial:** artifact detail/diff preview, mobile drawer, optional light mode, and assistive technology review remain. Do not add fabricated metrics. |
+| Section 06 data | Seven Alembic migrations; task, step, execution, approval, event, artifact and grant tables; clean checkout migration | **Partial:** backup/export/purge runbook and secure-erasure limits need release documentation. |
+| Section 07 API | Typed FastAPI contracts, local intent/Host/Origin checks, bounded pagination, 413/422/429/500 responses | **Partial:** checked-in OpenAPI schema, explicit event resync instruction and richer field-level errors remain. |
+| Section 08 network | Network off by default; unavailable flag rejected | **Open:** implement HTTPS-only fetch with DNS/IP and redirect checks, pinned connection, size/time limits, exact approval and negative SSRF tests before enabling. |
+| Section 09 security | Local audit in `security-audit.md`; path, approval, timeout, redaction and request-size tests | **Partial:** same-user report directory replacement race and SQLite/WAL erasure limits remain documented. |
+| Section 10 release tests | 81 backend tests passed locally with three Windows symlink skips; seven standard browser tests and installed-model workflow passed; clean checkout passed | **Partial:** manual assistive technology and sustained load checks remain. Linux CI passed through `03b7153`. |
+| Sections 11–13 operations/release | `docs/development.md`, architecture/ADR, screenshots, changelog and checkpoint | **Partial:** user/troubleshooting guides, release checklist, checked-in API schema, contribution/security files and release candidate are outstanding. A legal licence requires owner approval. |
+
+No v1 stable release is declared by this matrix.

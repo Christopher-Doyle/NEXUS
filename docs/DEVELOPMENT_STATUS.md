@@ -10,6 +10,8 @@ The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
 through NX-N03. All ten have verified baseline behavior, so functional P0
 progress is **10/10 = 100%**. This number does not imply a release-ready
 application or passing all security gates.
+The [v1 requirement matrix](v1-requirement-matrix.md) records each ID and
+cross-cutting acceptance gap against actual code and test evidence.
 
 ## Implemented
 
