@@ -73,6 +73,10 @@ cross-cutting acceptance gap against actual code and test evidence.
   The operator can accept an on-disk file only when it exactly matches the
   report rebuilt from verified read receipts, or confirm that no file exists.
   Accepted reports requeue dependent steps if the task deadline is still valid.
+- On POSIX, report creation now pins a no-follow directory handle and creates
+  the file relative to it with exclusive flags. Windows retains checked-path
+  creation; a hostile same-user process remains outside the supported trust
+  boundary on both platforms.
 - Local settings page persists the chosen Ollama model, planning timeout,
   task dispatch deadline and retention period. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
@@ -126,7 +130,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 100 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 101 passed, four POSIX/symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -216,7 +220,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for cursor-paged journals (`91fd789`). The
+Remote CI passed all three jobs for the search provider interface (`16d8a59`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -232,8 +236,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `91fd789` (cursor-paged journals).
-The local search provider interface is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `16d8a59` (local search provider).
+The POSIX report directory hardening is tested locally and pending commit.
 
 ## Known risks
 
@@ -246,6 +250,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the search provider interface, then verify Linux CI.
+Commit and push the POSIX report directory hardening, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

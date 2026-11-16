@@ -1,6 +1,7 @@
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -26,6 +27,37 @@ def artifact_dir(data_dir: str, task_id: str) -> Path:
     if root.resolve() != root:
         raise ToolDenied("Task artifact directory is redirected")
     return root
+
+
+def create_report_file(root: Path, filename: str, data: bytes) -> None:
+    """Create exclusively relative to a pinned directory where supported."""
+    if os.open in os.supports_dir_fd and hasattr(os, "O_DIRECTORY") and hasattr(os, "O_NOFOLLOW"):
+        try:
+            directory_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                original = os.fstat(directory_fd)
+                current = os.stat(root, follow_symlinks=False)
+                if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
+                    raise ToolDenied("Report directory changed before write")
+                file_fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory_fd)
+                with os.fdopen(file_fd, "wb") as output:
+                    output.write(data)
+                current = os.stat(root, follow_symlinks=False)
+                if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
+                    raise ToolDenied("Report directory changed during write")
+            finally:
+                os.close(directory_fd)
+        except FileExistsError as exc:
+            raise ToolDenied("Report file already exists; manual review is required") from exc
+        except OSError as exc:
+            raise ToolDenied("Report directory or file is unavailable") from exc
+        return
+    target = root / filename
+    try:
+        with target.open("xb") as output:
+            output.write(data)
+    except FileExistsError as exc:
+        raise ToolDenied("Report file already exists; manual review is required") from exc
 
 
 def report_bytes(db: Session, task: Task) -> bytes:
@@ -97,11 +129,7 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
         data = report_bytes(db, task)
         root = artifact_dir(get_settings().data_dir, task.id)
         target = root / args["filename"]
-        try:
-            with target.open("xb") as output:
-                output.write(data)
-        except FileExistsError as exc:
-            raise ToolDenied("Report file already exists; manual review is required") from exc
+        create_report_file(root, args["filename"], data)
         artifact = Artifact(task_id=task.id, safe_path=str(target), sha256=hashlib.sha256(data).hexdigest(), media_type="text/markdown", size_bytes=len(data))
         db.add(artifact)
         db.flush()

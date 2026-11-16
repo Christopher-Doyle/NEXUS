@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Hardened POSIX report creation with a pinned no-follow directory handle,
+  exclusive relative file creation and directory identity checks.
 - Added a code-level read-only search provider interface while retaining the
   single allowlisted, selected-file Markdown/text scanner in production.
 - Paginated task journals by event cursor, so cockpit and JSON history export

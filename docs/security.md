@@ -67,11 +67,15 @@ It rejects stale inspection digests, mismatched content, redirected paths and
 duplicate artifact records. An absent file may be acknowledged; it is never
 silently rewritten. Dependent steps requeue only if the task deadline remains
 valid; expired tasks stay failed.
-The app-owned report directory is checked for redirection before a write,
-but a separate process running as the same OS user could change that directory
-between the check and file creation. Stronger OS-level directory-handle or
+On POSIX hosts with directory-relative open support, report creation opens
+the artifact directory without following a symlink, pins its directory
+handle, creates the report exclusively relative to that handle and compares
+directory identity before and after writing. Windows retains the checked-path
+and exclusive-create fallback: a separate process running as the same OS user
+could change the directory between validation and file creation. Even on
+POSIX, a same-user process can move a directory while a handle is held;
 process isolation is still needed before treating local filesystem writes as
-fully race resistant.
+fully race resistant against a hostile same-user process.
 
 Source documents and model responses are untrusted. The deterministic report
 quotes source text as evidence; it does not follow instructions found there.
