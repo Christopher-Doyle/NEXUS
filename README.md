@@ -8,7 +8,7 @@
 
 ![Status](https://img.shields.io/badge/status-working%20local%20demo-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
 
-[Overview](#overview) · [Features](#planned-capabilities) · [Architecture](#architecture) · [Data & APIs](#data-model-and-api-contract) · [Roadmap](#roadmap)
+[Overview](#overview) · [Features](#implemented-capabilities) · [Run locally](#run-locally) · [Architecture](#architecture) · [Roadmap](#roadmap)
 
 </div>
 
@@ -16,14 +16,14 @@
 
 ## Overview
 
-NEXUS is a local personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. The working demo uses a permission-gated file reader, local text search, and Markdown report writer. Ollama planning is optional; the installed local `qwen3.5:9b` model completed an opt-in browser workflow through plan review, supervised execution and report approval.
+NEXUS is a local personal AI operations console: users define an objective, review an execution plan, approve sensitive actions, and inspect an evidence-backed record of what the agent actually did. The working demo uses a permission-gated file reader, local text search, and Markdown report writer. A bounded public HTTPS text fetch is available only when a task opts in and the exact action is approved. Ollama planning is optional; the installed local `qwen3.5:9b` model completed an opt-in browser workflow through plan review, supervised execution and report approval.
 
 
 ---
 
 ## Project status
 
-> **Working local demo in development** — The API persists tasks and reviewable plans. A supervised worker reads and searches selected local text files, requests approval before writing a report with source citations, and enforces bounded tool execution. The cockpit shows persisted tool receipts and can resolve uncertain report writes. History can export each task's metadata, journal, receipts and artifact metadata as JSON; inactive tasks can be deleted with exact confirmation. Settings can opt into 30, 90 or 365 day retention for terminal tasks, or keep them until manually deleted. Local model and timeout preferences are editable there too. An isolated Playwright test covers approved and rejected demo runs. This is an early MVP with documented limits. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [P0 traceability](docs/requirements.md), [security review](docs/security-audit.md), [local setup](docs/development.md), and [changelog](CHANGELOG.md).
+> **Working local demo in development** — Tasks, plans, approvals, journals and artifacts persist in SQLite. A supervised worker runs four allowlisted tools with bounded timeouts and exact approval for writes and opt-in HTTPS fetch. The cockpit shows receipts and report recovery. History exports task records; inactive tasks can be deleted, and terminal-task retention is optional. The artifact library previews verified reports. Automated backend, frontend and browser checks cover the local workflow. A real approved public fetch, manual assistive technology review and other [release gates](docs/release-checklist.md) remain open. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [security review](docs/security-audit.md) and [changelog](CHANGELOG.md).
 
 ### Verified local demo
 
@@ -45,18 +45,29 @@ rejected and produced no artifact.
 - **Accessible interfaces:** responsive layouts, keyboard navigation, legible contrast and helpful empty states.
 
 
-## Planned capabilities
+## Implemented capabilities
 
-| Capability | Intended behaviour |
+| Capability | Current behaviour |
 | --- | --- |
-| Task composer | Define goals, constraints, attachments and success criteria |
-| Planning engine | Break work into bounded steps with explicit dependencies |
-| Tool registry | Allowlisted tools with typed inputs, output schemas and capability scopes |
-| Approval gates | Pause before filesystem writes, network access or other sensitive actions |
-| Execution timeline | Show step statuses, tool calls, results, retries and elapsed time |
-| Workspace memory | Keep user-approved notes and searchable task history with deletion controls |
-| Recovery | Resume safe tasks after restarts without repeating side effects |
-| Evidence view | Link outcomes to source artifacts and tool receipts |
+| Task composer | Goals, constraints, success criteria and bounded text attachments or approved folders |
+| Planning | Deterministic demo or optional local Ollama plan; numbered steps can be edited before execution |
+| Tool registry | Four allowlisted tools with typed schemas, grants, timeouts and retry policy |
+| Approval gates | Exact action approval for report writes and opt-in public HTTPS text fetches |
+| Execution cockpit | Persisted status, events, receipts, approvals, pause, resume and cancellation |
+| History and retention | Searchable task history, cursor-paged journal export, confirmed deletion and optional age-based cleanup |
+| Recovery | Safe read retries and exact report-file reconciliation after uncertain writes |
+| Evidence | Cited Markdown reports, verified artifact preview and download |
+
+## Run locally
+
+Requires Python 3.12+, Node.js 22+, uv and npm. From `services/api`, run
+`uv sync --extra dev`, create the `data` directory, run
+`uv run alembic upgrade head`, then start
+`uv run uvicorn app.main:app --host 127.0.0.1 --port 8765`. In a second
+terminal there, run `uv run python -m app.worker`. From `apps/web`, run
+`npm ci` and `npm run dev`; open `http://127.0.0.1:5173`. The complete
+[setup guide](docs/development.md) covers local models, folder grants, tests
+and the isolated browser demo. No paid service or model download is required.
 
 ## Architecture
 
@@ -143,16 +154,6 @@ NEXUS/
 └── README.md
 ```
 
-## Definition of done — first working release
-
-- A task can be submitted and is persisted across a service restart.
-- The planner returns schema-valid, bounded steps from a local model or deterministic test fixture.
-- An unapproved write action does not execute; a rejection is recorded.
-- A repeated request does not duplicate a completed side effect.
-- A task can be cancelled and its full timeline inspected.
-- The demo runs without paid AI API keys.
-
-
 ## Engineering standards
 
 | Area | Standard |
@@ -168,13 +169,13 @@ NEXUS/
 
 - [x] **Foundation:** repository structure, developer setup, linting and CI
 - [x] **Core demo:** implement the primary workflow end-to-end with deterministic fixtures
-- [ ] **Reliability:** input validation, state/error handling, security controls and automated tests
-- [ ] **Experience:** responsive dashboard, accessibility and understandable feedback
-- [ ] **Release:** complete security gates, reproducible clean-clone demo and versioned release
+- [x] **Reliability baseline:** input validation, recovery, bounded tools and automated tests
+- [x] **Experience baseline:** responsive dashboard, mobile navigation, keyboard path and automated WCAG checks
+- [ ] **Release:** complete remaining security, manual accessibility and verification gates before a versioned release
 
 ## Contributing
 
-This is initially a solo portfolio project. Suggestions and thoughtful issues are welcome once development begins. Before opening a pull request, explain the problem, proposed change, tests and any security impact.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and checks. Explain the problem, proposed change, tests and any security impact before opening a pull request.
 
 ## Maintainer
 

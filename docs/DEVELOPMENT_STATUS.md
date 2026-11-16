@@ -89,6 +89,8 @@ cross-cutting acceptance gap against actual code and test evidence.
 - User, troubleshooting and operations guides now document the tested local
   workflow, consistent stopped-service backup, restore procedure and logical
   deletion limits. A release checklist names outstanding acceptance gates.
+- README now identifies implemented capabilities, gives a short local launch
+  path and links the detailed operator guides and release gates.
 - Security review fixes reject ungranted network access, bound each task
   constraint, redact filesystem exceptions from journal errors and escape
   untrusted HTML in exported reports. Findings and open risks are tracked in
@@ -220,7 +222,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the search provider interface (`16d8a59`). The
+Remote CI passed all three jobs for POSIX report creation (`1896b1f`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -236,8 +238,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `16d8a59` (local search provider).
-The POSIX report directory hardening is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `1896b1f` (POSIX report creation).
+The README accuracy update is pending commit.
 
 ## Known risks
 
@@ -250,6 +252,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the POSIX report directory hardening, then verify Linux CI.
+Commit and push the README accuracy update, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

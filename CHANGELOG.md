@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Updated README capability and launch descriptions to match the tested
+  application and its open release gates.
 - Hardened POSIX report creation with a pinned no-follow directory handle,
   exclusive relative file creation and directory identity checks.
 - Added a code-level read-only search provider interface while retaining the
