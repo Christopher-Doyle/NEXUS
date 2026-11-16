@@ -107,7 +107,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 81 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 91 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -179,6 +179,9 @@ cross-cutting acceptance gap against actual code and test evidence.
   The standard browser tests pass with the supervised production worker.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
+- A standalone HTTPS policy rejects ambiguous URLs, mixed public/private
+  DNS answers, private redirects and oversized responses in mocked tests.
+  It is not yet registered as a task tool; outbound tasks remain disabled.
 - `scripts/measure_local.py` ran against an isolated migrated SQLite database
   and loopback API on Windows 11 / Python 3.13.16. For 100 sequential requests,
   `/health` median/p95/max was 1.09/1.38/4.16 ms and `/ready` was
@@ -189,11 +192,9 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for opt-in retention (`5637b05`). The next
-run (`c72049b`) failed its Linux API job: the worker's initial cleanup used
-`time.monotonic() - 0 >= 3600`, which is false on a recently booted runner.
-The worker now uses an explicit first-run sentinel; the startup test fixes a
-100-second monotonic clock to cover this case. Web and E2E jobs passed.
+Remote CI passed all three jobs for the requirement audit (`735d974`). The
+worker-startup clock issue found in the earlier Linux run is fixed and
+covered by a 100-second monotonic-clock test.
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -207,9 +208,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `c72049b` (worker-startup
-retention verification; Linux API job failed). The startup-clock fix and
-four-client latency sample are tested locally and pending commit.
+Latest pushed commit before this checkpoint: `735d974` (v1 requirement
+audit). The standalone HTTPS policy is tested locally and pending commit.
 
 ## Known risks
 
@@ -222,6 +222,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the startup-clock fix and four-client latency sample, then
-verify Linux CI. Continue with manual assistive technology review and
-sustained load testing before a stable release.
+Commit and push the disabled-by-default HTTPS policy. Complete the fetch
+tool's registry, approval, worker, report and browser integration before
+enabling outbound tasks.

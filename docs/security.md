@@ -85,6 +85,9 @@ them until manual deletion. This is logical deletion, not secure erasure of
 SQLite free pages, backups or filesystem snapshots.
 It cannot expand workspace grants, enable network tools or change the loopback
 endpoint. Those boundaries remain in the operator's environment configuration.
+An HTTPS URL and DNS policy is under test but is not yet wired to a task tool;
+network requests remain disabled until its approval and execution path is
+complete.
 
 Mutating requests are limited in process to 120 per minute, with a separate
 20-per-minute planning bucket. Responses include `Retry-After` when limited.
