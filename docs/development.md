@@ -67,5 +67,6 @@ optional case. The runner never downloads a model.
 For a small loopback API latency sample, run `uv run python scripts/measure_local.py`
 from `services/api`. It migrates an isolated temporary database, starts an API
 process on a free loopback port, and reports median, p95 and maximum times for
-100 `/health`, 100 `/ready` and 10 synthetic task-creation requests. This is a
+100 `/health`, 100 `/ready`, 100 `/ready` requests across four clients and 10
+synthetic task-creation requests. This is a
 single-process smoke measurement, not a load or release capacity benchmark.

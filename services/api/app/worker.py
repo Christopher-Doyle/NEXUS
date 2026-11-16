@@ -292,7 +292,7 @@ def run_once_bounded(child_target=None) -> bool:
 
 def main() -> None:
     worker_id = str(uuid4())
-    last_prune = 0.0
+    last_prune: float | None = None
     while True:
         with SessionLocal() as db:
             heartbeat = db.get(WorkerHeartbeat, worker_id)
@@ -302,7 +302,7 @@ def main() -> None:
             else:
                 heartbeat.last_seen_at = utc_now()
             db.commit()
-            if time.monotonic() - last_prune >= 3600:
+            if last_prune is None or time.monotonic() - last_prune >= 3600:
                 try:
                     days = effective_settings(db).retention_days
                     db.commit()

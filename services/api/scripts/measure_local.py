@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from statistics import median
 
@@ -33,6 +34,26 @@ def measure(client: httpx.Client, method: str, path: str, count: int, **kwargs) 
         "median_ms": round(median(timings), 2),
         "p95_ms": round(percentile(timings, 0.95), 2),
         "max_ms": round(max(timings), 2),
+    }
+
+
+def measure_concurrent(client: httpx.Client, path: str, count: int, workers: int) -> dict:
+    def call(_index: int) -> float:
+        started = time.perf_counter()
+        client.get(path).raise_for_status()
+        return (time.perf_counter() - started) * 1000
+
+    wall_started = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        timings = list(pool.map(call, range(count)))
+    elapsed = time.perf_counter() - wall_started
+    return {
+        "samples": count,
+        "clients": workers,
+        "median_ms": round(median(timings), 2),
+        "p95_ms": round(percentile(timings, 0.95), 2),
+        "max_ms": round(max(timings), 2),
+        "requests_per_second": round(count / elapsed, 1),
     }
 
 
@@ -71,6 +92,7 @@ def main() -> None:
                     "python": platform.python_version(),
                     "health": measure(client, "GET", "/health", 100),
                     "ready": measure(client, "GET", "/ready", 100),
+                    "ready_four_clients": measure_concurrent(client, "/ready", 100, 4),
                     "create_task": measure(client, "POST", "/api/v1/tasks", 10, headers={"X-Nexus-Intent": "local"}, json={"goal": "Measure the local synthetic task path"}),
                 }
                 print(json.dumps(results, indent=2))

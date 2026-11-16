@@ -24,7 +24,7 @@ retry keys, lease recovery, write reconciliation and process timeouts. The
 model can propose a plan, but a human still reviews it before execution.
 
 Manual assistive technology review and load/capacity measurements remain
-release gates. An isolated loopback API latency smoke measurement is recorded
+release gates. Isolated loopback sequential and four-client smoke measurements are recorded
 in the development status. An automated keyboard focus and submission path passed for the
 task form. A separately cloned checkout installed lockfile
 dependencies, applied seven migrations and passed backend, frontend and

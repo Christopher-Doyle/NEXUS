@@ -182,8 +182,16 @@ application or passing all security gates.
   `/health` median/p95/max was 1.09/1.38/4.16 ms and `/ready` was
   1.16/1.44/1.60 ms. Ten synthetic task creates measured 3.59/5.17/15.97 ms.
   These are one-host smoke timings, not throughput or capacity claims.
+- A four-client sample of 100 `/ready` requests on the same Windows host had
+  3.45 ms median, 4.60 ms p95 and 24.41 ms maximum, with 1041.4 requests per
+  second across that short sample. This does not test sustained load or
+  multi-user behavior.
 
-Remote CI passed all three jobs for opt-in retention (`5637b05`).
+Remote CI passed all three jobs for opt-in retention (`5637b05`). The next
+run (`c72049b`) failed its Linux API job: the worker's initial cleanup used
+`time.monotonic() - 0 >= 3600`, which is false on a recently booted runner.
+The worker now uses an explicit first-run sentinel; the startup test fixes a
+100-second monotonic clock to cover this case. Web and E2E jobs passed.
 Ollama is installed with
 two local models. A real `qwen3.5:9b` readiness check passed and a direct
 adapter call returned a validated read/write plan. The first 30-second call
@@ -197,8 +205,9 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `5637b05` (opt-in retention).
-The worker-startup retention integration test is pending commit.
+Latest pushed commit before this checkpoint: `c72049b` (worker-startup
+retention verification; Linux API job failed). The startup-clock fix and
+four-client latency sample are tested locally and pending commit.
 
 ## Known risks
 
@@ -211,6 +220,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the worker-startup retention integration test. Continue with
-manual assistive technology review and load/capacity testing before a stable
-release.
+Commit and push the startup-clock fix and four-client latency sample, then
+verify Linux CI. Continue with manual assistive technology review and
+sustained load testing before a stable release.

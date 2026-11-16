@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from datetime import timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -135,7 +136,7 @@ def test_worker_applies_opt_in_retention_on_startup(tmp_path, monkeypatch) -> No
     def stop_after_first_cycle(_seconds: float) -> None:
         raise EndLoop
 
-    monkeypatch.setattr("app.worker.time.sleep", stop_after_first_cycle)
+    monkeypatch.setattr("app.worker.time", SimpleNamespace(monotonic=lambda: 100.0, sleep=stop_after_first_cycle))
     from app.worker import main as worker_main
 
     with pytest.raises(EndLoop):
