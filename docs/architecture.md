@@ -55,3 +55,8 @@ exact-step approval. DNS answers must all be public, the connection pins the
 validated address with the original TLS hostname, redirects remain on the
 same origin, and responses are bounded. An uncertain fetch outcome stops for
 review without automatic replay.
+
+Local document search uses a read-only `SearchProvider` boundary. The only
+production provider is the reviewed Markdown/text scanner, which calls the
+same selected-workspace reader as `read_file`; no runtime third-party provider
+loading is enabled.

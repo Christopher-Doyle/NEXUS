@@ -25,3 +25,18 @@ def test_search_plan_requires_grant_and_typed_query() -> None:
         validate_steps([step], ["read_file"])
     with pytest.raises(ValueError, match="Invalid arguments"):
         validate_steps([step.model_copy(update={"args": {"query": "A"}})], ["search_local_docs"])
+
+
+def test_search_dispatch_uses_the_provider_boundary(tmp_path, monkeypatch) -> None:
+    observed = []
+
+    class StubProvider:
+        def search(self, workspace: str, selected_files: list[str], query: str) -> dict:
+            observed.append((workspace, selected_files, query))
+            return {"query": query, "matches": [], "truncated": False}
+
+    monkeypatch.setattr("app.tool_runner.SEARCH_PROVIDER", StubProvider())
+    task = Task(goal="Search selected notes", workspace_path=str(tmp_path), input_files_json='["selected.md"]')
+    step = PlanStep(tool_name="search_local_docs", args_json='{"query":"Atlas"}')
+    assert run_tool(None, task, step)["matches"] == []
+    assert observed == [(str(tmp_path), ["selected.md"], "Atlas")]

@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.models import Artifact, Execution, PlanStep, Task
 from app.network_policy import FetchDenied, fetch_https_text, validated_https_url
 from app.registry import REGISTRY
+from app.search import SEARCH_PROVIDER
 from app.tool_policy import ToolDenied, read_workspace_text
 
 
@@ -83,15 +84,7 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
         query = args["query"].strip()
         if len(query) < 2:
             raise ToolDenied("Search query is too short")
-        matches = []
-        for name in json.loads(task.input_files_json)[:5]:
-            _, content = read_workspace_text(task.workspace_path, name)
-            for line_number, line in enumerate(content.splitlines(), start=1):
-                if query.casefold() in line.casefold():
-                    matches.append({"source": name, "line": line_number, "excerpt": line[:200]})
-                    if len(matches) == 20:
-                        return {"query": query, "matches": matches, "truncated": True}
-        return {"query": query, "matches": matches, "truncated": False}
+        return SEARCH_PROVIDER.search(task.workspace_path, json.loads(task.input_files_json), query)
     if step.tool_name == "fetch_url":
         if not task.network_access:
             raise ToolDenied("Network access is not enabled for this task")
