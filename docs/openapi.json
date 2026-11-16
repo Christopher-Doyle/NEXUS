@@ -1360,6 +1360,17 @@
               "title": "Task Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
           }
         ],
         "responses": {

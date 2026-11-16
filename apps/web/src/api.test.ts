@@ -21,3 +21,12 @@ test('task deletion confirms the exact ID and accepts an empty response', async 
   await expect(api.deleteTask('task-1')).resolves.toBeUndefined()
   expect(fetchMock).toHaveBeenCalledWith('/api/v1/tasks/task-1', expect.objectContaining({ method: 'DELETE', body: JSON.stringify({ confirm_id: 'task-1' }) }))
 })
+
+test('task journal follows the cursor after a full page', async () => {
+  const first = Array.from({ length: 500 }, (_, index) => ({ id: index + 1, type: 'update', occurred_at: '', payload: {} }))
+  const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => first }).mockResolvedValueOnce({ ok: true, json: async () => [{ id: 501, type: 'done', occurred_at: '', payload: {} }] })
+  vi.stubGlobal('fetch', fetchMock)
+  const events = await api.journal('task-1')
+  expect(events).toHaveLength(501)
+  expect(fetchMock.mock.calls.map(call => call[0])).toEqual(['/api/v1/tasks/task-1/journal?after=0', '/api/v1/tasks/task-1/journal?after=500'])
+})

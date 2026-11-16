@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Paginated task journals by event cursor, so cockpit and JSON history export
+  can include events beyond the first 500.
 - Added a compact mobile navigation menu with expanded-state semantics and
   a browser navigation check.
 - Added local user, troubleshooting, backup/restore and release-checklist

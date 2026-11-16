@@ -43,7 +43,17 @@ export const api = {
   resumeTask: (id: string) => request<Task>(`/tasks/${id}/resume`, 'POST'),
   approvals: () => request<Approval[]>('/approvals'),
   decide: (approval: Approval, decision: 'approved' | 'rejected') => request<Approval>(`/approvals/${approval.id}/decision`, 'POST', { decision, scope_hash: approval.scope_hash }),
-  journal: (id: string) => request<JournalEvent[]>(`/tasks/${id}/journal`),
+  journal: async (id: string) => {
+    const events: JournalEvent[] = []
+    let after = 0
+    for (;;) {
+      const page = await request<JournalEvent[]>(`/tasks/${id}/journal?after=${after}`)
+      events.push(...page)
+      if (page.length < 500) return events
+      if (events.length >= 10000) throw new Error('Journal exceeds the display limit')
+      after = page[page.length - 1].id
+    }
+  },
   executions: (id: string) => request<ExecutionReceipt[]>(`/tasks/${id}/executions`),
   artifacts: (id: string) => request<Artifact[]>(`/tasks/${id}/artifacts`),
   exportTask: async (id: string) => {

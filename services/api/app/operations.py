@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy import func, select
@@ -98,10 +98,10 @@ def task_events(task_id: str, db: DbSession, after: int = 0, last_event_id: Anno
 
 
 @router.get("/tasks/{task_id}/journal")
-def task_journal(task_id: str, db: DbSession) -> list[dict]:
+def task_journal(task_id: str, db: DbSession, after: int = Query(default=0, ge=0)) -> list[dict]:
     if db.get(Task, task_id) is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    rows = db.scalars(select(Event).where(Event.task_id == task_id).order_by(Event.seq).limit(500)).all()
+    rows = db.scalars(select(Event).where(Event.task_id == task_id, Event.seq > after).order_by(Event.seq).limit(500)).all()
     return [{"id": event.seq, "type": event.kind, "occurred_at": utc_iso(event.created_at), "payload": json.loads(event.payload_json)} for event in rows]
 
 

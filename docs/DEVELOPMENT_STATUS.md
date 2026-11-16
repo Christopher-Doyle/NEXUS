@@ -32,6 +32,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   schema-checked and size-bounded before persistence.
 - Execution records, idempotency hashes, approval scope hashes, append-only
   events, SSE replay, artifact metadata and verified download.
+- Journal history uses 500-event cursor pages. The web client follows pages
+  for cockpit and task-history export, with a 10,000-event display guard.
 - Persisted tool versions and a cockpit receipt view with attempts, timing,
   state, hashes, error codes and validated result metadata. Source text is
   omitted from receipt responses.
@@ -122,11 +124,11 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 98 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 99 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
-- `npm test`: three frontend API tests passed.
+- `npm test`: four frontend API tests passed.
 - `npm run test:e2e`: eight standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
@@ -212,7 +214,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the operations guides (`78a6d8d`). The
+Remote CI passed all three jobs for the mobile navigation menu (`25bc49a`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -228,8 +230,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `78a6d8d` (operations and release
-guides). The mobile navigation improvement is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `25bc49a` (mobile navigation).
+Cursor-paged journals are tested locally and pending commit.
 
 ## Known risks
 
@@ -242,6 +244,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the mobile navigation improvement, then verify Linux CI.
+Commit and push cursor-paged journals, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

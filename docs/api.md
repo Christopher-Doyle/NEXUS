@@ -23,7 +23,7 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/resume` | Resume a paused task |
 | POST | `/api/v1/tasks/{id}/cancel` | Cancel an active task |
 | GET | `/api/v1/tasks/{id}/events` | SSE event stream with cursor replay |
-| GET | `/api/v1/tasks/{id}/journal` | Bounded event history |
+| GET | `/api/v1/tasks/{id}/journal` | Event history in 500-event cursor pages (`?after=<last id>`) |
 | GET | `/api/v1/tasks/{id}/executions` | Bounded tool receipts with version, timing, hashes and safe result metadata |
 | GET | `/api/v1/tasks/{id}/recovery` | Inspect an uncertain report write and compare its exact expected digest |
 | POST | `/api/v1/tasks/{id}/recovery` | Accept a matching existing report or acknowledge that no report exists |
@@ -70,7 +70,8 @@ events, in batches of 100. Browser `EventSource` reconnects with its last ID;
 the cockpit also refreshes task, journal and receipts on reconnect or stream
 error. A new client should first read the task and journal snapshot, then
 open the stream using the last journal event ID. The journal endpoint returns
-up to 500 earliest events and is not a complete export for larger histories.
+up to 500 events after a cursor; the web client follows cursor pages through
+the whole task journal, with a 10,000-event display guard.
 
 `fetch_url` is a high-risk plan tool. Task creation must grant both the
 `fetch_url` capability and `network_access: true`; both are off by default.
