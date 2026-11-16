@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Added local user, troubleshooting, backup/restore and release-checklist
+  guides, plus contribution and security reporting guidance.
 - Added an in-app, bounded preview of integrity-checked Markdown reports in
   the artifact library, with separate download and source-task navigation.
 - Checked in the generated OpenAPI contract with a CI drift check, added

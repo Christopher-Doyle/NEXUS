@@ -127,6 +127,10 @@ fetch, which requires exact approval before the worker connects. A real public
 fetch has not yet been verified; local policy and workflow tests use mocked
 connections.
 
+See the [user guide](docs/user-guide.md), [operations and backup](docs/operations.md),
+[troubleshooting](docs/troubleshooting.md), [security policy](SECURITY.md) and
+[release checklist](docs/release-checklist.md) for current behavior and gates.
+
 ## Repository structure
 
 ```text

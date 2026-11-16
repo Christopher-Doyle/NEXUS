@@ -76,6 +76,9 @@ cross-cutting acceptance gap against actual code and test evidence.
   errors identify bounded field paths without echoing the submitted body.
   The cockpit refreshes persisted state and shows reconnect status if its SSE
   stream drops; the API supports `Last-Event-ID` and `after` replay.
+- User, troubleshooting and operations guides now document the tested local
+  workflow, consistent stopped-service backup, restore procedure and logical
+  deletion limits. A release checklist names outstanding acceptance gates.
 - Security review fixes reject ungranted network access, bound each task
   constraint, redact filesystem exceptions from journal errors and escape
   untrusted HTML in exported reports. Findings and open risks are tracked in
@@ -223,9 +226,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `c4f335b` (OpenAPI contract and
-SSE reconnect feedback). The artifact preview is tested locally and pending
-commit.
+Latest pushed commit before this checkpoint: `ea76554` (artifact preview).
+The local operations and release guides are pending commit.
 
 ## Known risks
 
@@ -238,6 +240,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the verified artifact preview, then verify Linux CI. A real
-public fetch still requires explicit user authorization. Continue with the
-outstanding v1 UI, API and release criteria in the requirement matrix.
+Commit and push the operations and release guides, then verify Linux CI.
+A real public fetch still requires explicit user authorization. Continue with
+the outstanding v1 UI and release criteria in the requirement matrix.
