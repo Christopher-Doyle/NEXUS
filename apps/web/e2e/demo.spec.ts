@@ -58,7 +58,12 @@ test('rejected report write produces no artifact', async ({ page }) => {
 test('mobile settings remain usable and persist a deadline', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
+  const menu = page.getByRole('button', { name: 'Open menu' })
+  await expect(menu).toHaveAttribute('aria-expanded', 'false')
+  await menu.click()
+  await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true')
   await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Settings' }).click()
+  await expect(page.getByRole('button', { name: 'Open menu' })).toHaveAttribute('aria-expanded', 'false')
   await expect(page.getByRole('heading', { name: 'Settings.' })).toBeVisible()
   const deadline = page.getByLabel('Task dispatch deadline, seconds')
   await deadline.fill('1200')

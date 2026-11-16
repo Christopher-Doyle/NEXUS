@@ -25,7 +25,7 @@ behavior or an acceptance check is still missing; it is not a release pass.
 
 | Specification area | Current evidence | Status and next work |
 | --- | --- | --- |
-| Section 03 UX | Dashboard, task form, plan, cockpit, history, report preview, artifacts and Settings routes; browser and axe checks | **Partial:** version diff viewer, mobile drawer, optional light mode, and assistive technology review remain. Do not add fabricated metrics. |
+| Section 03 UX | Dashboard, task form, plan, cockpit, history, report preview, artifacts, Settings and a tested mobile menu; browser and axe checks | **Partial:** version diff viewer, optional light mode, and manual assistive technology review remain. Do not add fabricated metrics. |
 | Section 06 data | Seven Alembic migrations; task, step, execution, approval, event, artifact and grant tables; clean checkout migration; `operations.md` backup, restore and purge runbook | **Partial:** backup and restore have not been exercised as a release acceptance check; deletion is logical, not secure erasure. |
 | Section 07 API | Typed FastAPI contracts, checked-in OpenAPI schema with CI drift check, local intent/Host/Origin checks, bounded pagination, 413/422/429/500 responses, field paths for validation and documented SSE replay | **Partial:** verify the new contract gate on Linux CI; journal snapshot is capped at 500 earliest events. |
 | Section 08 network | HTTPS-only `fetch_url` off by default per task; exact approval; public DNS/IP validation, pinned TLS connection, same-origin redirects, response and time bounds; negative SSRF tests and browser rejection | **Partial:** local policy and mocked workflow verified; a real approved public fetch remains unverified. No unrestricted networking is exposed. |

@@ -96,6 +96,13 @@ function PlanReview() {
   </main>
 }
 
-function App() { return <div className="app-shell"><aside className="sidebar"><Link to="/" className="brand"><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><nav aria-label="Primary navigation"><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link><Link to="/history">History</Link><Link to="/artifacts">Artifacts</Link><Link to="/settings">Settings</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div></aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /><Route path="/artifacts" element={<Artifacts />} /><Route path="/settings" element={<Settings />} /></Routes></div> }
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const closeMenu = () => setMenuOpen(false)
+  return <div className="app-shell"><aside className={`sidebar${menuOpen ? ' menu-open' : ''}`} onKeyDown={event => { if (event.key === 'Escape') closeMenu() }}>
+    <div className="sidebar-top"><Link to="/" className="brand" onClick={closeMenu}><span className="brand-mark">N</span><span>NEXUS<small>Local operations</small></span></Link><button type="button" className="menu-toggle" aria-controls="primary-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? 'Close menu' : 'Open menu'}</button></div>
+    <nav id="primary-nav" aria-label="Primary navigation" onClick={closeMenu}><Link to="/">Overview</Link><Link to="/tasks/new">New task</Link><Link to="/history">History</Link><Link to="/artifacts">Artifacts</Link><Link to="/settings">Settings</Link></nav><div className="sidebar-foot">Local-first · Synthetic demo</div>
+  </aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /><Route path="/artifacts" element={<Artifacts />} /><Route path="/settings" element={<Settings />} /></Routes></div>
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>)

@@ -49,6 +49,8 @@ cross-cutting acceptance gap against actual code and test evidence.
 - Dashboard, task composer, plan review, execution cockpit and persisted task
   history with search, status filtering and pagination. The cockpit includes a
   timeline, approval controls, journal and artifact links.
+- A mobile navigation menu opens on demand, closes after navigation and
+  exposes its expanded state to assistive technology.
 - Paginated artifact library with links to the source task and verified downloads.
 - The artifact library previews verified report text in-app with a 512 KiB
   client bound, while preserving a separate download and source-task link.
@@ -210,7 +212,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the OpenAPI/SSE contract (`c4f335b`). The
+Remote CI passed all three jobs for the operations guides (`78a6d8d`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -226,8 +228,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `ea76554` (artifact preview).
-The local operations and release guides are pending commit.
+Latest pushed commit before this checkpoint: `78a6d8d` (operations and release
+guides). The mobile navigation improvement is tested locally and pending commit.
 
 ## Known risks
 
@@ -240,6 +242,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the operations and release guides, then verify Linux CI.
+Commit and push the mobile navigation improvement, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.
