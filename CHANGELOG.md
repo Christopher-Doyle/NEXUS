@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Added a bounded sustained loopback readiness sample to the isolated
+  performance script and recorded the measured one-host result.
 - Displayed API validation field paths and correlated server-error references
   in the web client.
 - Added an isolated backup/restore verification script and CI gate covering

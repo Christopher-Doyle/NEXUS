@@ -79,3 +79,7 @@ process on a free loopback port, and reports median, p95 and maximum times for
 100 `/health`, 100 `/ready`, 100 `/ready` requests across four clients and 10
 synthetic task-creation requests. This is a
 single-process smoke measurement, not a load or release capacity benchmark.
+To add a bounded four-client 30-second `/ready` sample, run
+`uv run python scripts/measure_local.py --sustain-seconds 30`. This still
+measures one local API process and the database readiness route; it does not
+measure task execution throughput or multiple users.

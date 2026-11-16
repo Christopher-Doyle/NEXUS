@@ -227,8 +227,13 @@ cross-cutting acceptance gap against actual code and test evidence.
   3.45 ms median, 4.60 ms p95 and 24.41 ms maximum, with 1041.4 requests per
   second across that short sample. This does not test sustained load or
   multi-user behavior.
+- A later 30-second, four-client `/ready` sample on Windows 11 / Python
+  3.13.16 completed 34,837 requests with zero errors, 3.41 ms median,
+  4.27 ms p95 and 23.41 ms maximum, about 1,161.2 requests per second.
+  This is loopback database-readiness throughput on one host, not task
+  execution or multi-user capacity.
 
-Remote CI passed all three jobs for the backup/restore gate (`be7be71`). The
+Remote CI passed all three jobs for field-level client errors (`481ea5c`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -244,8 +249,9 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `be7be71` (isolated backup and
-restore gate). Field-level client errors are tested locally and pending commit.
+Latest pushed commit before this checkpoint: `481ea5c` (field-level client
+errors). The sustained loopback measurement option is tested locally and
+pending commit.
 
 ## Known risks
 
@@ -258,6 +264,7 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push field-level client errors, then verify Linux CI.
+Commit and push the sustained loopback measurement option, then verify Linux
+CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

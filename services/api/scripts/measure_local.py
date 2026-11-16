@@ -1,5 +1,6 @@
 """Measure loopback API latency against an isolated, freshly migrated database."""
 
+import argparse
 import json
 import os
 import platform
@@ -57,7 +58,48 @@ def measure_concurrent(client: httpx.Client, path: str, count: int, workers: int
     }
 
 
+def measure_sustained(client: httpx.Client, seconds: int, workers: int = 4) -> dict:
+    deadline = time.perf_counter() + seconds
+
+    def run_client() -> tuple[list[float], int]:
+        timings = []
+        errors = 0
+        while time.perf_counter() < deadline:
+            started = time.perf_counter()
+            try:
+                client.get("/ready").raise_for_status()
+            except httpx.HTTPError:
+                errors += 1
+            else:
+                timings.append((time.perf_counter() - started) * 1000)
+        return timings, errors
+
+    started = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        results = list(pool.map(lambda _index: run_client(), range(workers)))
+    elapsed = time.perf_counter() - started
+    timings = [value for client_timings, _ in results for value in client_timings]
+    errors = sum(failures for _, failures in results)
+    if not timings:
+        raise RuntimeError("Sustained sample had no successful requests")
+    return {
+        "seconds": round(elapsed, 2),
+        "clients": workers,
+        "successful_requests": len(timings),
+        "errors": errors,
+        "median_ms": round(median(timings), 2),
+        "p95_ms": round(percentile(timings, 0.95), 2),
+        "max_ms": round(max(timings), 2),
+        "requests_per_second": round(len(timings) / elapsed, 1),
+    }
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sustain-seconds", type=int, default=0, help="optional 5–120 second four-client /ready sample")
+    options = parser.parse_args()
+    if options.sustain_seconds and not 5 <= options.sustain_seconds <= 120:
+        parser.error("--sustain-seconds must be between 5 and 120")
     with tempfile.TemporaryDirectory(prefix="nexus-perf-") as temp_dir:
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
@@ -95,6 +137,8 @@ def main() -> None:
                     "ready_four_clients": measure_concurrent(client, "/ready", 100, 4),
                     "create_task": measure(client, "POST", "/api/v1/tasks", 10, headers={"X-Nexus-Intent": "local"}, json={"goal": "Measure the local synthetic task path"}),
                 }
+                if options.sustain_seconds:
+                    results["ready_sustained"] = measure_sustained(client, options.sustain_seconds)
                 print(json.dumps(results, indent=2))
         finally:
             server.terminate()
