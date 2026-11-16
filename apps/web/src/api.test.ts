@@ -15,6 +15,15 @@ test('API errors reach the task composer', async () => {
   await expect(api.createTask({ goal: 'Read private notes', constraints: [], success_criteria: null, capabilities: ['read_file'], network_access: false, workspace_path: 'C:/Private', input_files: [] })).rejects.toThrow('Folder is not approved')
 })
 
+test('validation errors identify the field and server failures keep a reference', async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce({ ok: false, status: 422, json: async () => ({ message: 'Invalid input', fields: [{ field: 'body.network_access', message: 'Input should be a valid boolean' }] }) })
+    .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ message: 'Request failed', correlation_id: 'local-reference' }) })
+  vi.stubGlobal('fetch', fetchMock)
+  await expect(api.settings()).rejects.toThrow('body.network_access: Input should be a valid boolean')
+  await expect(api.settings()).rejects.toThrow('Request failed (reference local-reference)')
+})
+
 test('task deletion confirms the exact ID and accepts an empty response', async () => {
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 })
   vi.stubGlobal('fetch', fetchMock)

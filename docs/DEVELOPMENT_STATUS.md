@@ -82,6 +82,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
+- The web API client displays named validation fields and includes the local
+  correlation reference on server errors so operator logs can be matched.
 - Checked-in generated OpenAPI contract with a CI drift check. Validation
   errors identify bounded field paths without echoing the submitted body.
   The cockpit refreshes persisted state and shows reconnect status if its SSE
@@ -139,7 +141,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
-- `npm test`: four frontend API tests passed.
+- `npm test`: five frontend API tests passed.
 - `npm run test:e2e`: eight standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
@@ -226,7 +228,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the README accuracy update (`dd119fb`). The
+Remote CI passed all three jobs for the backup/restore gate (`be7be71`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -242,8 +244,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `dd119fb` (README accuracy).
-The isolated backup/restore gate is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `be7be71` (isolated backup and
+restore gate). Field-level client errors are tested locally and pending commit.
 
 ## Known risks
 
@@ -256,6 +258,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the backup/restore gate, then verify Linux CI.
+Commit and push field-level client errors, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

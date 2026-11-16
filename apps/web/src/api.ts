@@ -12,9 +12,11 @@ export type ExecutionReceipt = { id: string; step_id: string; step_ordinal: numb
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const response = await fetch(`/api/v1${path}`, { method, headers: { 'Content-Type': 'application/json', 'X-Nexus-Intent': 'local' }, body: body === undefined ? undefined : JSON.stringify(body) })
   if (!response.ok) {
-    const error: { detail?: string | { msg: string }[]; message?: string } = await response.json()
+    const error: { detail?: string | { msg: string }[]; message?: string; fields?: { field: string; message: string }[]; correlation_id?: string } = await response.json()
     const detail = Array.isArray(error.detail) ? error.detail.map(item => item.msg).join(', ') : error.detail
-    throw new Error(detail || error.message || `Request failed (${response.status})`)
+    const fields = error.fields?.map(item => `${item.field}: ${item.message}`).join('; ')
+    const message = fields || detail || error.message || `Request failed (${response.status})`
+    throw new Error(response.status >= 500 && error.correlation_id ? `${message} (reference ${error.correlation_id})` : message)
   }
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
