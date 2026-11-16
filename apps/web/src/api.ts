@@ -55,4 +55,11 @@ export const api = {
   recovery: (id: string) => request<Recovery>(`/tasks/${id}/recovery`),
   resolveRecovery: (id: string, inspection: Recovery, decision: 'accept_existing' | 'confirm_absent') => request<{ task_state: string; step_state: string; decision: string }>(`/tasks/${id}/recovery`, 'POST', { step_id: inspection.step_id, expected_sha256: inspection.expected_sha256, decision }),
   artifactLibrary: (offset = 0) => request<{ items: ArtifactRecord[]; total: number }>(`/artifacts?offset=${offset}`),
+  artifactText: async (id: string) => {
+    const response = await fetch(`/api/v1/artifacts/${id}`)
+    if (!response.ok) throw new Error(`Report preview unavailable (${response.status})`)
+    const bytes = await response.arrayBuffer()
+    if (bytes.byteLength > 512 * 1024) throw new Error('Report is too large to preview; download it instead')
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  },
 }

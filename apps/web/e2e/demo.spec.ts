@@ -36,6 +36,11 @@ test('approved demo completes with a report and persisted history', async ({ pag
   expect(exported.journal.length).toBeGreaterThan(0)
   expect(exported.executions.some((item: { tool_name: string }) => item.tool_name === 'write_report')).toBeTruthy()
   expect(exported.artifacts.some((item: { filename: string }) => item.filename === 'project-report.md')).toBeTruthy()
+  await page.getByRole('link', { name: 'Artifacts' }).click()
+  await page.getByRole('button', { name: 'Preview project-report.md' }).click()
+  await expect(page.getByRole('heading', { name: 'Report preview: project-report.md' })).toBeVisible()
+  await expect(page.locator('.artifact-preview')).toContainText('## Citations')
+  await expect(page.getByRole('link', { name: 'Download report' })).toHaveAttribute('href', reportUrl!)
 })
 
 test('rejected report write produces no artifact', async ({ page }) => {
