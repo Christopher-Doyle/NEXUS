@@ -18,6 +18,11 @@ the backup into the configured locations, run `alembic upgrade head` from
 status on the dashboard, task history and one verified artifact download.
 Restoring a backup can restore older task, approval and retention state;
 inspect pending approvals before resuming a task.
+The isolated `python scripts/verify_backup_restore.py` check from
+`services/api` creates a temporary migrated database, a synthetic report,
+copies the stopped data directory, restores it, reapplies migrations and
+verifies that the artifact download still matches its recorded digest. It
+does not touch your normal data directory or test recovery of active tasks.
 
 ## Delete or retain records
 

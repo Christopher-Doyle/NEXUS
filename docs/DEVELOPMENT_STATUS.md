@@ -132,6 +132,9 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
+- An isolated backup/restore check migrated a temporary database, saved a
+  synthetic artifact, copied and restored the stopped data directory, reran
+  migrations and verified the artifact download digest. CI now runs this gate.
 - `python -m pytest -q`: 101 passed, four POSIX/symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
@@ -145,7 +148,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   plan reorder buttons' accessible names.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
-- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all eight browser tests passed;
+- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all nine browser tests passed on
+  the current checkout;
   the installed model generated a plan, the supervised worker executed it,
   the report write was approved and the task completed.
 - The browser flow downloads a per-task JSON history export and checks its
@@ -222,7 +226,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for POSIX report creation (`1896b1f`). The
+Remote CI passed all three jobs for the README accuracy update (`dd119fb`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -238,8 +242,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `1896b1f` (POSIX report creation).
-The README accuracy update is pending commit.
+Latest pushed commit before this checkpoint: `dd119fb` (README accuracy).
+The isolated backup/restore gate is tested locally and pending commit.
 
 ## Known risks
 
@@ -252,6 +256,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the README accuracy update, then verify Linux CI.
+Commit and push the backup/restore gate, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.
