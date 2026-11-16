@@ -88,11 +88,12 @@ def run_once(db: Session, tool_start: Callable[[str, str], None] | None = None) 
         execution.lease_until = utc_now() + timedelta(seconds=60)
         db.commit()
     else:
-        if step.tool_name == "write_report":
+        if REGISTRY[step.tool_name].risk == "high":
             scope = approval_scope(task, step)
             approval = db.scalar(select(Approval).where(Approval.step_id == step.id, Approval.scope_hash == scope).order_by(Approval.created_at.desc()))
             if approval is None:
-                db.add(Approval(step_id=step.id, scope_hash=scope, requested_action=f"Write report {json.loads(step.args_json)['filename']}", expires_at=utc_now() + timedelta(hours=1)))
+                action = f"Write report {json.loads(step.args_json)['filename']}" if step.tool_name == "write_report" else f"Fetch HTTPS text from {json.loads(step.args_json)['url']}"
+                db.add(Approval(step_id=step.id, scope_hash=scope, requested_action=action, expires_at=utc_now() + timedelta(hours=1)))
                 transition(task, "waiting_approval")
                 record_event(db, task.id, "approval_requested", {"step_id": step.id})
                 db.commit()
@@ -117,7 +118,7 @@ def run_once(db: Session, tool_start: Callable[[str, str], None] | None = None) 
         db.add(execution)
         step.state = "running"
         db.commit()
-    if step.tool_name == "write_report":
+    if REGISTRY[step.tool_name].risk == "high":
         begin_write(db)
         db.refresh(task)
         if task.state == "cancelled":
@@ -177,7 +178,7 @@ def run_once(db: Session, tool_start: Callable[[str, str], None] | None = None) 
         step = db.get(PlanStep, step.id)
         task = db.get(Task, task.id)
         execution = db.get(Execution, execution.id)
-        step.state = "needs_review" if step.tool_name == "write_report" else "failed"
+        step.state = "needs_review" if REGISTRY[step.tool_name].retry == "manual_review" else "failed"
         execution.status = step.state
         execution.error_code = type(exc).__name__
         execution.ended_at = utc_now()

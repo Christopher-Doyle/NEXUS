@@ -34,7 +34,7 @@ export function Settings() {
         {save.isError && <p role="alert" className="form-error">{save.error.message}</p>}{save.isSuccess && <p role="status" className="notice">Settings saved locally.</p>}
         <button className="button" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</button>
       </form>
-      <section className="empty-panel"><h2>System boundaries</h2><div className="status-row"><span>Local model</span><strong className={model.data?.available ? 'good' : 'muted'}>{model.isLoading ? 'Checking…' : model.data?.available ? 'Ready' : 'Unavailable'}</strong></div><p>{model.data?.message || 'Demo planning works without a model.'}</p><p>{settings.data.approved_workspace_count} operator-approved workspace{settings.data.approved_workspace_count === 1 ? '' : 's'} configured. Network tools are disabled.</p></section>
+      <section className="empty-panel"><h2>System boundaries</h2><div className="status-row"><span>Local model</span><strong className={model.data?.available ? 'good' : 'muted'}>{model.isLoading ? 'Checking…' : model.data?.available ? 'Ready' : 'Unavailable'}</strong></div><p>{model.data?.message || 'Demo planning works without a model.'}</p><p>{settings.data.approved_workspace_count} operator-approved workspace{settings.data.approved_workspace_count === 1 ? '' : 's'} configured. Public HTTPS fetches are off by default and require a task grant plus exact approval.</p></section>
     </>}
   </main>
 }

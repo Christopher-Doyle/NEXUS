@@ -4,14 +4,16 @@ NEXUS binds the API and dev server to loopback. Mutations require an accepted
 local Host and Origin plus `X-Nexus-Intent: local`; this is a local browser
 boundary, not remote user authentication. No remote deployment is supported.
 
-The worker executes registered `read_file`, `search_local_docs`, and
-`write_report` operations only.
+The worker executes registered `read_file`, `search_local_docs`, `fetch_url`
+and `write_report` operations only.
 It validates the tool grant, typed arguments and argument hash at dispatch.
 The registry also validates the output shape and serialized size before an
 execution result is persisted. The production worker runs each action in a
 killable child process and applies the registry timeout after the tool starts.
-A timed-out read fails with `ToolTimeout`; a timed-out write becomes
-`needs_review` and uses the existing exact-file reconciliation workflow.
+A timed-out local read fails with `ToolTimeout`; a timed-out report write
+becomes `needs_review` and uses exact-file reconciliation. An uncertain HTTPS
+request is never retried automatically and requires a new, explicitly
+approved task if the owner chooses to try again.
 Tool receipts retain the version used at dispatch. The receipt endpoint
 revalidates stored result schemas and omits source file contents from API
 responses; the local database still contains read text needed for reports.
@@ -27,17 +29,24 @@ alternate-stream syntax is rejected. Relative read paths reject those forms,
 traversal and control characters on both Windows and Linux. Reads compare the
 opened file identity with the validated file before reading, so a path swap
 between validation and open is denied. Search examines only those selected files and
-returns at most 20 line excerpts. Network access is not implemented, and task
-creation rejects `network_access=true`.
+returns at most 20 line excerpts. HTTPS fetch is off by default and requires
+both a task capability and `network_access=true`, then a separate exact-scope
+approval. The fetch policy allows public HTTPS port 443 only, rejects userinfo,
+ambiguous URL syntax and non-public DNS answers, pins the TCP connection to a
+validated address with the original TLS hostname, revalidates same-origin
+redirects, and caps redirects, time and response bytes. Mocked policy and
+approval tests pass. A real public fetch is awaiting explicit external-access
+approval at this checkpoint.
 
 Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file
 and records its SHA-256 digest. Artifact directories reject symlink redirection.
 Downloads recheck the artifact path, opened file identity, size and digest
 before sending bytes. A redirected artifact root is rejected.
-Report citations name each local source and its line range and SHA-256 content
+Report citations name each selected local or approved HTTPS source and its
+line range and SHA-256 content
 snapshot. Before writing, the worker recomputes the digest of each stored read
-receipt and checks its source name against the plan step. A changed source
+receipt and checks its provenance against the plan step. A changed source
 file after the read does not alter that snapshot; citations are evidence
 references, not a verification of the source's claims.
 The worker acquires a SQLite write lock before the final report action and
@@ -85,9 +94,8 @@ them until manual deletion. This is logical deletion, not secure erasure of
 SQLite free pages, backups or filesystem snapshots.
 It cannot expand workspace grants, enable network tools or change the loopback
 endpoint. Those boundaries remain in the operator's environment configuration.
-An HTTPS URL and DNS policy is under test but is not yet wired to a task tool;
-network requests remain disabled until its approval and execution path is
-complete.
+The HTTPS tool is a per-task opt-in capability; Settings cannot turn it on
+globally or expand a task's grant after creation.
 
 Mutating requests are limited in process to 120 per minute, with a separate
 20-per-minute planning bucket. Responses include `Retry-After` when limited.

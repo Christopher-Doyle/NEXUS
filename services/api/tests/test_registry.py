@@ -13,7 +13,7 @@ from app.worker import run_once
 
 
 def test_every_registered_tool_declares_a_bounded_contract() -> None:
-    assert set(REGISTRY) == {"read_file", "search_local_docs", "write_report"}
+    assert set(REGISTRY) == {"read_file", "search_local_docs", "write_report", "fetch_url"}
     for name, spec in REGISTRY.items():
         assert spec.name == spec.capability == name
         assert spec.version and spec.description
@@ -28,6 +28,9 @@ def test_every_registered_tool_declares_a_bounded_contract() -> None:
     assert REGISTRY["write_report"].max_attempts == 1
     assert REGISTRY["read_file"].max_attempts == 3
     assert REGISTRY["write_report"].idempotency == "exclusive_create"
+    assert REGISTRY["fetch_url"].risk == "high"
+    assert REGISTRY["fetch_url"].retry == "manual_review"
+    assert REGISTRY["fetch_url"].idempotency == "uncertain_external"
 
 
 def test_search_output_rejects_extra_fields_and_unbounded_matches() -> None:

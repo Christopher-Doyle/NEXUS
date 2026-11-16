@@ -21,7 +21,7 @@ class SettingsView(BaseModel):
     task_timeout_seconds: int
     retention_days: int
     approved_workspace_count: int
-    network_access_enabled: bool = False
+    network_access_enabled: bool = True
 
 
 class SettingsUpdate(BaseModel):

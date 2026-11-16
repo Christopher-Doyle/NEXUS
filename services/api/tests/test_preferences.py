@@ -22,7 +22,7 @@ def test_local_settings_persist_and_bound_new_task_deadline(tmp_path) -> None:
         client = TestClient(app, base_url="http://127.0.0.1:8765")
         headers = {"x-nexus-intent": "local"}
         before = client.get("/api/v1/settings").json()
-        assert before["network_access_enabled"] is False
+        assert before["network_access_enabled"] is True
         assert before["retention_days"] == 0
         assert client.patch("/api/v1/settings", json={"ollama_model": "qwen3.5:9b"}).status_code == 403
         assert client.patch("/api/v1/settings", headers=headers, json={"network_access_enabled": True}).status_code == 422

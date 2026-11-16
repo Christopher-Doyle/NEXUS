@@ -22,8 +22,10 @@ cross-cutting acceptance gap against actual code and test evidence.
   configurable bounded timeout, capped generation, one repair attempt and
   availability check. The installed `qwen3.5:9b` model produced a validated
   synthetic two-step plan in a direct adapter check.
-- Separate worker process with three allowlisted tools: bounded text read,
-  bounded search of selected local files, and approval-gated Markdown report write.
+- Separate worker process with four allowlisted tools: bounded text read,
+  bounded search of selected local files, exact-approved public HTTPS text
+  fetch, and approval-gated Markdown report write. HTTPS remains off unless
+  the task explicitly grants it.
 - Explicit registry declares each tool's version, input and output schema,
   permission, risk, timeout, output limit, retry and idempotency behavior.
   Safe reads have at most three total attempts. Worker responses are
@@ -40,7 +42,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   started task. Expired queued, paused and approval-waiting tasks fail before
   another tool action; approval and report-write boundaries recheck it.
 - The production worker supervises each action in a killable child process.
-  A tool's registered five-second timeout begins at the tool call. Timed-out
+  Local tools have five-second timeouts and HTTPS fetch has a 15-second
+  timeout beginning at the tool call. Timed-out
   reads fail with `ToolTimeout`; uncertain report writes stop for reconciliation,
   whether a file was created or not.
 - Dashboard, task composer, plan review, execution cockpit and persisted task
@@ -67,15 +70,16 @@ cross-cutting acceptance gap against actual code and test evidence.
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
-- Security review fixes reject unavailable network access, bound each task
+- Security review fixes reject ungranted network access, bound each task
   constraint, redact filesystem exceptions from journal errors and escape
   untrusted HTML in exported reports. Findings and open risks are tracked in
   [the local security review](security-audit.md).
 
 ## Incomplete
 
-- No outbound network fetch tool or general document parsers. Network access
-  remains unused and off in the web client.
+- Public HTTPS text fetch is implemented with exact approval and SSRF tests;
+  a real public target has not yet been exercised. General document parsers
+  remain out of scope for the current text tools.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
   per task. The task deadline stops future tool dispatch; the registered tool
@@ -107,12 +111,12 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 91 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 97 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: three frontend API tests passed.
-- `npm run test:e2e`: seven standard browser tests passed with installed Chrome, fresh
+- `npm run test:e2e`: eight standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
   It also confirms and persists a 30-day retention choice after reload.
@@ -180,8 +184,13 @@ cross-cutting acceptance gap against actual code and test evidence.
 - Security tests cover Host, Origin and intent rejection, explicit network
   denial, bounded constraints, HTML escaping and journal path redaction.
 - A standalone HTTPS policy rejects ambiguous URLs, mixed public/private
-  DNS answers, private redirects and oversized responses in mocked tests.
-  It is not yet registered as a task tool; outbound tasks remain disabled.
+  DNS answers, private/cross-origin redirects and oversized responses in
+  mocked tests. The TCP connection is pinned to the validated public address
+  while TLS checks the original hostname. An API/worker test verifies exact
+  approval and no automatic replay after an uncertain request. Another test
+  produces a cited report from approved mocked HTTPS text. The browser test
+  grants the tool, rejects HTTP syntax and denies the pending HTTPS request
+  before any outbound call.
 - `scripts/measure_local.py` ran against an isolated migrated SQLite database
   and loopback API on Windows 11 / Python 3.13.16. For 100 sequential requests,
   `/health` median/p95/max was 1.09/1.38/4.16 ms and `/ready` was
@@ -192,7 +201,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the requirement audit (`735d974`). The
+Remote CI passed all three jobs for the standalone HTTPS policy (`c18ec15`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -208,8 +217,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `735d974` (v1 requirement
-audit). The standalone HTTPS policy is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `c18ec15` (standalone HTTPS
+policy). The integrated `fetch_url` tool is tested locally and pending commit.
 
 ## Known risks
 
@@ -222,6 +231,7 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the disabled-by-default HTTPS policy. Complete the fetch
-tool's registry, approval, worker, report and browser integration before
-enabling outbound tasks.
+Run the complete regression gates for the integrated HTTPS fetch, then commit,
+push and verify Linux CI. A real public fetch still requires explicit user
+authorization. Continue with the outstanding v1 UI, API and release criteria
+in the requirement matrix.

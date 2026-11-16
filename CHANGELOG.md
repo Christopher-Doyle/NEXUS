@@ -4,6 +4,10 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Added an opt-in HTTPS text fetch tool with public-address DNS checks,
+  address-pinned TLS, same-origin redirects, response bounds and exact-step
+  approval. Local SSRF and workflow tests use mocked connections; a real
+  public fetch remains unverified.
 - Added a supervised worker that terminates tools at their registered process
   deadlines and records recoverable outcomes for uncertain report writes.
 - Rejected ambiguous Windows and POSIX path syntax; verified opened-file

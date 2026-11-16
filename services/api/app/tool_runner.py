@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Artifact, Execution, PlanStep, Task
+from app.network_policy import FetchDenied, fetch_https_text, validated_https_url
 from app.registry import REGISTRY
 from app.tool_policy import ToolDenied, read_workspace_text
 
@@ -27,25 +28,34 @@ def artifact_dir(data_dir: str, task_id: str) -> Path:
 
 
 def report_bytes(db: Session, task: Task) -> bytes:
-    if not task.workspace_path:
-        raise ToolDenied("No workspace is configured for this task")
     readings = []
-    for source_step in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id, PlanStep.tool_name == "read_file").order_by(PlanStep.ordinal)):
+    for source_step in db.scalars(select(PlanStep).where(PlanStep.task_id == task.id, PlanStep.tool_name.in_(["read_file", "fetch_url"])).order_by(PlanStep.ordinal)):
         execution = db.scalar(select(Execution).where(Execution.step_id == source_step.id, Execution.status == "completed"))
         if execution is None or execution.result_json is None:
             raise ToolDenied("Source readings are incomplete")
         try:
-            reading = REGISTRY["read_file"].output.model_validate_json(execution.result_json).model_dump()
-            source_path = REGISTRY["read_file"].parameters.model_validate_json(source_step.args_json).path
+            reading = REGISTRY[source_step.tool_name].output.model_validate_json(execution.result_json).model_dump()
+            arguments = REGISTRY[source_step.tool_name].parameters.model_validate_json(source_step.args_json)
         except ValidationError as exc:
             raise ToolDenied("Source reading receipt is invalid") from exc
-        if reading["source"] != Path(source_path).name or hashlib.sha256(reading["content"].encode("utf-8")).hexdigest() != reading["sha256"]:
+        source_path = arguments.path if source_step.tool_name == "read_file" else arguments.url
+        if source_step.tool_name == "read_file":
+            valid_source = reading["source"] == Path(source_path).name
+        else:
+            try:
+                validated_https_url(reading["source"])
+                valid_source = reading["requested_url"] == source_path
+            except FetchDenied:
+                valid_source = False
+        if not valid_source or hashlib.sha256(reading["content"].encode("utf-8")).hexdigest() != reading["sha256"]:
             raise ToolDenied("Source reading provenance is invalid")
-        reading["path"] = source_path
+        reading["path"] = source_path if source_step.tool_name == "read_file" else reading["source"]
         readings.append(reading)
     if not readings:
         raise ToolDenied("A report requires at least one source reading")
-    lines = [f"# Report: {html.escape(task.goal, quote=False)}", "", "Generated from local source files. The text below is extracted evidence, not a model-verified conclusion.", ""]
+    if len(readings) > REGISTRY["write_report"].resource_limits["source_files"]:
+        raise ToolDenied("Report has too many source readings")
+    lines = [f"# Report: {html.escape(task.goal, quote=False)}", "", "Generated from selected local and approved HTTPS text sources. The text below is extracted evidence, not a model-verified conclusion.", ""]
     for number, reading in enumerate(readings, start=1):
         quoted_content = "\n".join(f"> {html.escape(line, quote=False)}" for line in reading["content"].splitlines())
         lines += [f"## Source [{number}]: {html.escape(json.dumps(reading['path']), quote=False)}", "", quoted_content, ""]
@@ -82,6 +92,14 @@ def run_tool(db: Session, task: Task, step: PlanStep) -> dict:
                     if len(matches) == 20:
                         return {"query": query, "matches": matches, "truncated": True}
         return {"query": query, "matches": matches, "truncated": False}
+    if step.tool_name == "fetch_url":
+        if not task.network_access:
+            raise ToolDenied("Network access is not enabled for this task")
+        try:
+            source, content = fetch_https_text(args["url"])
+        except FetchDenied as exc:
+            raise ToolDenied(str(exc)) from exc
+        return {"requested_url": args["url"], "source": source, "content": content, "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest()}
     if step.tool_name == "write_report":
         data = report_bytes(db, task)
         root = artifact_dir(get_settings().data_dir, task.id)

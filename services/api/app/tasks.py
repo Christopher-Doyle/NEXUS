@@ -93,8 +93,8 @@ def replace_steps(db: Session, task: Task, steps: list[StepInput]) -> None:
 
 @router.post("", response_model=TaskView, status_code=201)
 def create_task(body: TaskCreate, db: DbSession) -> TaskView:
-    if body.network_access:
-        raise HTTPException(status_code=422, detail="Network tools are not enabled")
+    if body.network_access != ("fetch_url" in body.capabilities):
+        raise HTTPException(status_code=422, detail="HTTPS fetch requires both network access and the fetch_url capability")
     if body.workspace_path and body.input_files:
         raise HTTPException(status_code=422, detail="Choose an approved folder or attach files, not both")
     task_id = new_id()

@@ -78,9 +78,31 @@ test('task form is operable in keyboard focus order', async ({ page }) => {
     await expect(page.getByLabel(label, { exact: false })).toBeFocused()
   }
   await page.keyboard.press('Tab')
+  await expect(page.getByLabel('Allow approved HTTPS text fetches')).toBeFocused()
+  await page.keyboard.press('Tab')
   await expect(page.getByRole('button', { name: 'Create task' })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Review the steps.' })).toBeVisible()
+})
+
+test('HTTPS fetch needs a task grant, valid URL and separate approval', async ({ page }) => {
+  await page.goto('/tasks/new')
+  await page.getByLabel('Allow approved HTTPS text fetches').check()
+  await page.getByRole('button', { name: 'Create task' }).click()
+  await page.getByRole('button', { name: 'Generate plan' }).click()
+  await page.getByRole('button', { name: 'Add HTTPS fetch' }).click()
+  const url = page.getByLabel('Public HTTPS URL')
+  await url.fill('http://example.com/notes')
+  await page.getByRole('button', { name: 'Save plan' }).click()
+  await expect(page.getByRole('alert')).toContainText('Invalid arguments')
+  await url.fill('https://example.com/notes')
+  await page.getByRole('button', { name: 'Save plan' }).click()
+  await expect(page.getByRole('status')).toHaveText('Plan saved. Any earlier approvals require renewal.')
+  await page.getByRole('button', { name: 'Start approved plan' }).click()
+  await expect(page.getByRole('heading', { name: 'Approval required' })).toBeVisible()
+  await expect(page.getByText('Fetch HTTPS text from https://example.com/notes')).toBeVisible()
+  await page.getByRole('button', { name: 'Reject' }).click()
+  await expect(page.locator('.cockpit-head .chip')).toHaveText('failed')
 })
 
 test('installed local Ollama model runs a reviewed plan', async ({ page }) => {

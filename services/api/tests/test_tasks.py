@@ -55,6 +55,11 @@ def test_task_planning_and_editing(tmp_path) -> None:
         assert blocked.status_code == 403
         network = client.post("/api/v1/tasks", headers=headers, json={"goal": "Request outbound fetch", "network_access": True})
         assert network.status_code == 422
+        missing_consent = client.post("/api/v1/tasks", headers=headers, json={"goal": "Request outbound fetch", "capabilities": ["fetch_url"]})
+        assert missing_consent.status_code == 422
+        scoped_network = client.post("/api/v1/tasks", headers=headers, json={"goal": "Review public HTTPS source", "capabilities": ["fetch_url"], "network_access": True})
+        assert scoped_network.status_code == 201
+        assert scoped_network.json()["network_access"] is True
         oversized = client.post("/api/v1/tasks", headers=headers, json={"goal": "Reject huge constraint", "constraints": ["x" * 501]})
         assert oversized.status_code == 422
         created = client.post("/api/v1/tasks", headers=headers, json={"goal": "Create a sample report"})

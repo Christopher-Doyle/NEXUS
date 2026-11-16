@@ -26,6 +26,8 @@ def validate_invocation(task: Task, step: PlanStep) -> None:
         raise ToolDenied("Tool arguments changed after plan validation")
     if step.tool_name == "read_file" and not safe_relative_path(args["path"]):
         raise ToolDenied("Read path is outside the task workspace")
+    if step.tool_name == "fetch_url" and not task.network_access:
+        raise ToolDenied("Network access is not enabled for this task")
 
 
 def approval_scope(task: Task, step: PlanStep) -> str:

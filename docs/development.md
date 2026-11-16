@@ -45,6 +45,15 @@ task records and NEXUS-owned files when the local worker checks for cleanup.
 `APPROVED_WORKSPACES`, `DATA_DIR`, and `OLLAMA_ENDPOINT` remain operator-only
 environment settings. Run `alembic upgrade head` before using the updated UI.
 
+Public HTTPS text fetch is an optional task capability. Select it on the task
+form, add a `fetch_url` plan step with a full `https://` URL, and approve the
+exact step in the cockpit. The worker validates every DNS address as public,
+pins the validated IP for TLS, allows only same-origin redirects and caps
+response text at 64 KiB. Fetch failures or uncertain interrupted attempts
+stop for review; the worker does not replay them automatically. Do not put
+credentials in URLs: URLs and fetched text are stored in local task records.
+The ordinary demo and browser suite make no real public network requests.
+
 ## Reproducible browser demo
 
 After `uv sync --extra dev` in `services/api` and `npm ci` in `apps/web`, run

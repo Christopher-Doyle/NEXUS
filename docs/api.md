@@ -59,6 +59,16 @@ requires recovery inspection before the file is accepted or confirmed absent.
 selected Markdown and text files, returning at most 20 line excerpts. A user
 can add the step during plan review and provide the literal search text.
 
+`fetch_url` is a high-risk plan tool. Task creation must grant both the
+`fetch_url` capability and `network_access: true`; both are off by default.
+The plan step accepts a full public `https://` URL and requires an exact-step
+approval before execution. The worker validates public DNS answers, pins the
+TLS connection to the validated address, confines redirects to the same
+origin, accepts only text/HTML/Markdown and reads at most 64 KiB. The registry
+timeout is 15 seconds; an uncertain fetch is not automatically retried.
+Fetched text can be cited by a later `write_report` step. URLs and source
+text are stored in task data; do not put credentials in URLs.
+
 `DELETE /tasks/{id}` requires `{"confirm_id":"<same task ID>"}` and returns
 204. Active tasks must be cancelled before deletion. Selected external
 workspaces are not deleted.

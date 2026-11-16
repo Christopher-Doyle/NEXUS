@@ -54,7 +54,7 @@ def public_addresses(host: str) -> list[str]:
         raise FetchDenied("HTTPS hostname returned an invalid address") from exc
     if not all(address.is_global for address in parsed):
         raise FetchDenied("HTTPS target resolves to a non-public address")
-    return addresses
+    return [str(address) for address in sorted(parsed, key=lambda item: item.version)]
 
 
 class PinnedHTTPSConnection(http.client.HTTPSConnection):
@@ -88,7 +88,10 @@ def fetch_https_text(url: str) -> tuple[str, str]:
                 location = response.getheader("Location")
                 if not location or redirect == MAX_REDIRECTS:
                     raise FetchDenied("HTTPS redirect limit reached")
-                current = validated_https_url(urljoin(current, location))
+                next_url = validated_https_url(urljoin(current, location))
+                if urlsplit(next_url).hostname != parsed.hostname:
+                    raise FetchDenied("Cross-origin HTTPS redirect requires a new approval")
+                current = next_url
                 continue
             if response.status != 200:
                 raise FetchDenied(f"HTTPS target returned status {response.status}")

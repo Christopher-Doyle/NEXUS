@@ -122,7 +122,10 @@ single-owner local boundary, not remote authentication.
 For the working demo, follow [local setup](docs/development.md), launch the API,
 worker and web client, create a task, generate the deterministic plan, review
 it, start execution, and approve or reject the scoped report write. The model
-remains optional and network access is disabled.
+remains optional. A task can separately opt into a bounded public HTTPS text
+fetch, which requires exact approval before the worker connects. A real public
+fetch has not yet been verified; local policy and workflow tests use mocked
+connections.
 
 ## Repository structure
 

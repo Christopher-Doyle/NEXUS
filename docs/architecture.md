@@ -14,6 +14,7 @@ flowchart LR
   Worker[Worker process] --> DB
   Worker -->|read selected files| Workspace[Approved workspace]
   Worker -->|approved write| Artifacts[Artifact store]
+  Worker -->|approved HTTPS fetch| Public[Public HTTPS origin]
   UI -->|SSE replay| API
 ```
 
@@ -30,7 +31,7 @@ After an accepted report, dependent steps are requeued while the deadline is
 valid. A real process-kill test covers the write, rollback, review and
 reconciliation sequence.
 
-`write_report` needs a one-hour approval whose scope includes task, plan
+`write_report` and `fetch_url` need a one-hour approval whose scope includes task, plan
 version, step, and argument hash. Immediately before the write, the worker
 locks the SQLite transaction and rechecks the task state and approval. Reports
 are created exclusively under the app data directory, with a SHA-256 digest.
@@ -43,10 +44,14 @@ The API exposes bounded receipts without returning read-file contents.
 
 The [tool registry](../services/api/app/registry.py) declares each tool's
 parameters, output schema, risk, retry mode, attempt limit, and resource
-bounds. The current implementation supports selected text files and Markdown
-reports. The
+bounds. The current implementation supports selected text files, bounded public
+HTTPS text fetches and Markdown reports. The
 production worker supervises each action in a child process. It starts the
 registry timeout when the child enters the tool, terminates a stalled child,
 and records a durable timeout outcome. Uncertain writes still require report
 reconciliation. A persisted task deadline defaults to one hour and prevents
-new actions after expiry. External network fetch remains future security work.
+new actions after expiry. HTTPS fetch is an explicit per-task grant and an
+exact-step approval. DNS answers must all be public, the connection pins the
+validated address with the original TLS hostname, redirects remain on the
+same origin, and responses are bounded. An uncertain fetch outcome stops for
+review without automatic replay.
