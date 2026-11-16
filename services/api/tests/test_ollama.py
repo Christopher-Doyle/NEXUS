@@ -36,6 +36,31 @@ def test_ollama_repairs_once_then_validates(monkeypatch) -> None:
     assert len(calls) == 2
     assert calls[0][1]["think"] is False
     assert calls[0][1]["options"]["num_predict"] == 1024
+    assert "minimal JSON execution plan" in calls[0][1]["prompt"]
+
+
+def test_detailed_style_changes_only_the_reviewed_prompt(monkeypatch) -> None:
+    payloads = []
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            pass
+
+        def post(self, url, json):
+            payloads.append(json)
+            return httpx.Response(200, json={"response": '{"steps":[{"description":"Read brief","tool_name":"read_file","args":{"path":"brief.md"},"dependencies":[]}]}'}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr("app.ollama.httpx.Client", FakeClient)
+    steps = generate_plan("Read notes", [], ["read_file"], "http://127.0.0.1:11434", "test-model", available_files=["brief.md"], planning_style="detailed")
+    assert steps[0].args == {"path": "brief.md"}
+    assert "detailed but bounded" in payloads[0]["prompt"]
+    assert "Do not provide shell commands" in payloads[0]["prompt"]
 
 
 def test_ollama_rejects_unsupported_tool_after_repair(monkeypatch) -> None:

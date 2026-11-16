@@ -29,7 +29,8 @@ unknown file or tool, correct the plan or use the deterministic demo.
 
 ## Settings and data
 
-Settings can change the installed Ollama model name, planning and task
+Settings can change the installed Ollama model name, a concise or detailed
+planning style, planning and task
 timeouts, and retention of completed, failed and cancelled tasks. Retention
 is off by default. A 30, 90 or 365 day period lets the worker remove eligible
 task records and NEXUS-owned files in batches. **Delete** in History requires

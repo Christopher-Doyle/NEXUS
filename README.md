@@ -50,7 +50,7 @@ rejected and produced no artifact.
 | Capability | Current behaviour |
 | --- | --- |
 | Task composer | Goals, constraints, success criteria and bounded text attachments or approved folders |
-| Planning | Deterministic demo or optional local Ollama plan; numbered steps can be edited before execution |
+| Planning | Deterministic demo or optional local Ollama plan with a concise/detailed prompt setting; numbered steps can be edited before execution |
 | Tool registry | Four allowlisted tools with typed schemas, grants, timeouts and retry policy |
 | Approval gates | Exact action approval for report writes and opt-in public HTTPS text fetches |
 | Execution cockpit | Persisted status, events, receipts, approvals, pause, resume and cancellation |

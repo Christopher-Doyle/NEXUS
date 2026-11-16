@@ -44,12 +44,15 @@ def model_status(endpoint: str, model: str) -> dict:
         return {"available": False, "model": model, "message": "Ollama is unavailable"}
 
 
-def generate_plan(goal: str, constraints: list[str], capabilities: list[str], endpoint: str, model: str, timeout_seconds: int = 90, available_files: list[str] | None = None) -> list[StepInput]:
+def generate_plan(goal: str, constraints: list[str], capabilities: list[str], endpoint: str, model: str, timeout_seconds: int = 90, available_files: list[str] | None = None, planning_style: str = "concise") -> list[StepInput]:
     if not model.strip():
         raise ModelUnavailable("Set OLLAMA_MODEL to an installed local model")
     base = local_endpoint(endpoint)
+    if planning_style not in {"concise", "detailed"}:
+        raise ValueError("Unknown planning style")
+    style_instruction = "Create a minimal JSON execution plan, preferably at most four steps." if planning_style == "concise" else "Create a detailed but bounded JSON execution plan with clear step descriptions and dependencies."
     prompt = (
-        "Create a minimal JSON execution plan, preferably at most four steps. Use only the listed tools. "
+        f"{style_instruction} Use only the listed tools. "
         "Each step needs description, tool_name, args, dependencies (prior 1-based step numbers). "
         "read_file args: {path: relative filename}; search_local_docs args: {query: literal text}; "
         "fetch_url args: {url: public HTTPS URL}; write_report args: {filename: safe .md name}. "

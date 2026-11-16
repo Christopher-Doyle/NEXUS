@@ -78,7 +78,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   creation; a hostile same-user process remains outside the supported trust
   boundary on both platforms.
 - Local settings page persists the chosen Ollama model, planning timeout,
-  task dispatch deadline and retention period. Operator-approved workspace paths and the loopback
+  a bounded concise/detailed planning style, task dispatch deadline and
+  retention period. Operator-approved workspace paths and the loopback
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
@@ -137,7 +138,7 @@ cross-cutting acceptance gap against actual code and test evidence.
 - An isolated backup/restore check migrated a temporary database, saved a
   synthetic artifact, copied and restored the stopped data directory, reran
   migrations and verified the artifact download digest. CI now runs this gate.
-- `python -m pytest -q`: 101 passed, four POSIX/symlink skips on this Windows host,
+- `python -m pytest -q`: 102 passed, four POSIX/symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -233,7 +234,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   This is loopback database-readiness throughput on one host, not task
   execution or multi-user capacity.
 
-Remote CI passed all three jobs for field-level client errors (`481ea5c`). The
+Remote CI passed all three jobs for sustained loopback measurement (`5b9c0e3`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -249,8 +250,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `481ea5c` (field-level client
-errors). The sustained loopback measurement option is tested locally and
+Latest pushed commit before this checkpoint: `5b9c0e3` (sustained loopback
+measurement). Bounded planning-style configuration is tested locally and
 pending commit.
 
 ## Known risks
@@ -264,7 +265,6 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the sustained loopback measurement option, then verify Linux
-CI.
+Commit and push bounded planning-style configuration, then verify Linux CI.
 A real public fetch still requires explicit user authorization. Continue with
 the outstanding v1 UI and release criteria in the requirement matrix.

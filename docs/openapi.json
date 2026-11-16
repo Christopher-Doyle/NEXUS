@@ -229,6 +229,21 @@
             ],
             "title": "Ollama Timeout Seconds"
           },
+          "planning_style": {
+            "anyOf": [
+              {
+                "enum": [
+                  "concise",
+                  "detailed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Style"
+          },
           "retention_days": {
             "anyOf": [
               {
@@ -282,6 +297,14 @@
             "title": "Ollama Timeout Seconds",
             "type": "integer"
           },
+          "planning_style": {
+            "enum": [
+              "concise",
+              "detailed"
+            ],
+            "title": "Planning Style",
+            "type": "string"
+          },
           "retention_days": {
             "title": "Retention Days",
             "type": "integer"
@@ -293,6 +316,7 @@
         },
         "required": [
           "ollama_model",
+          "planning_style",
           "ollama_timeout_seconds",
           "task_timeout_seconds",
           "retention_days",

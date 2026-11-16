@@ -16,7 +16,7 @@ authentication scheme.
 | POST | `/api/v1/tasks/{id}/plan` | Generate the deterministic demo plan |
 | PATCH | `/api/v1/tasks/{id}/steps` | Replace a plan with a matching version |
 | GET | `/api/v1/model/status` | Check configured local Ollama model |
-| GET/PATCH | `/api/v1/settings` | Read and update local model, timeout and retention preferences |
+| GET/PATCH | `/api/v1/settings` | Read and update local model, planning style, timeout and retention preferences |
 | GET | `/api/v1/worker/status` | Recent worker heartbeat and active process count |
 | POST | `/api/v1/tasks/{id}/start` | Queue a reviewed plan |
 | POST | `/api/v1/tasks/{id}/pause` | Pause after the current step |
@@ -87,7 +87,8 @@ text are stored in task data; do not put credentials in URLs.
 204. Active tasks must be cancelled before deletion. Selected external
 workspaces are not deleted.
 
-`PATCH /settings` accepts `ollama_model`, `ollama_timeout_seconds` (10–180),
+`PATCH /settings` accepts `ollama_model`, `planning_style` (`concise` or
+`detailed`), `ollama_timeout_seconds` (10–180),
 `task_timeout_seconds` (60–86400) and `retention_days` (0, 30, 90 or 365).
 Zero retains records until manual deletion. The local worker checks at startup
 and about once an hour, pruning up to 20 terminal tasks per pass when enabled.

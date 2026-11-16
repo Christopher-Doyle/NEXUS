@@ -5,7 +5,7 @@ export type Approval = { id: string; task_id: string; step_id: string; scope_has
 export type JournalEvent = { id: number; type: string; occurred_at: string; payload: Record<string, unknown> }
 export type Artifact = { id: string; filename: string; sha256: string; size_bytes: number; media_type: string; created_at: string }
 export type ArtifactRecord = Artifact & { task_id: string; task_goal: string }
-export type LocalSettings = { ollama_model: string; ollama_timeout_seconds: number; task_timeout_seconds: number; retention_days: number; approved_workspace_count: number; network_access_enabled: boolean }
+export type LocalSettings = { ollama_model: string; planning_style: 'concise' | 'detailed'; ollama_timeout_seconds: number; task_timeout_seconds: number; retention_days: number; approved_workspace_count: number; network_access_enabled: boolean }
 export type Recovery = { step_id: string; filename: string; status: 'matches' | 'absent' | 'mismatch' | 'unsafe'; expected_sha256: string; actual_sha256: string | null }
 export type ExecutionReceipt = { id: string; step_id: string; step_ordinal: number; tool_name: string; tool_version: string; args_hash: string; idempotency_key: string; attempt: number; status: string; started_at: string | null; ended_at: string | null; lease_until: string | null; error_code: string | null; result: Record<string, unknown> | null }
 
@@ -37,7 +37,7 @@ export const api = {
   modelStatus: () => request<{ available: boolean; model: string; message: string }>('/model/status'),
   workerStatus: () => request<{ active: boolean; active_count: number; last_seen_at: string | null }>('/worker/status'),
   settings: () => request<LocalSettings>('/settings'),
-  updateSettings: (changes: Pick<LocalSettings, 'ollama_model' | 'ollama_timeout_seconds' | 'task_timeout_seconds' | 'retention_days'>) => request<LocalSettings>('/settings', 'PATCH', changes),
+  updateSettings: (changes: Pick<LocalSettings, 'ollama_model' | 'planning_style' | 'ollama_timeout_seconds' | 'task_timeout_seconds' | 'retention_days'>) => request<LocalSettings>('/settings', 'PATCH', changes),
   editPlan: (task: Task, steps: Step[]) => request<Task>(`/tasks/${task.id}/steps`, 'PATCH', { plan_version: task.plan_version, steps: steps.map(({ description, tool_name, args, dependencies }) => ({ description, tool_name, args, dependencies })) }),
   startTask: (id: string) => request<Task>(`/tasks/${id}/start`, 'POST'),
   cancelTask: (id: string) => request<Task>(`/tasks/${id}/cancel`, 'POST'),

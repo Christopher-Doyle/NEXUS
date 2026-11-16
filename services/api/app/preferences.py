@@ -17,6 +17,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 
 class SettingsView(BaseModel):
     ollama_model: str
+    planning_style: Literal["concise", "detailed"]
     ollama_timeout_seconds: int
     task_timeout_seconds: int
     retention_days: int
@@ -27,6 +28,7 @@ class SettingsView(BaseModel):
 class SettingsUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     ollama_model: str | None = Field(default=None, max_length=100, pattern=r"^[a-zA-Z0-9_.:/-]*$")
+    planning_style: Literal["concise", "detailed"] | None = None
     ollama_timeout_seconds: int | None = Field(default=None, ge=10, le=180)
     task_timeout_seconds: int | None = Field(default=None, ge=60, le=86400)
     retention_days: Literal[0, 30, 90, 365] | None = None
@@ -34,9 +36,10 @@ class SettingsUpdate(BaseModel):
 
 def effective_settings(db: Session) -> SettingsView:
     defaults = get_settings()
-    values = {row.key: row.value for row in db.scalars(select(AppSetting).where(AppSetting.key.in_(["ollama_model", "ollama_timeout_seconds", "task_timeout_seconds", "retention_days"]))).all()}
+    values = {row.key: row.value for row in db.scalars(select(AppSetting).where(AppSetting.key.in_(["ollama_model", "planning_style", "ollama_timeout_seconds", "task_timeout_seconds", "retention_days"]))).all()}
     return SettingsView(
         ollama_model=values.get("ollama_model", defaults.ollama_model),
+        planning_style=values.get("planning_style", "concise"),
         ollama_timeout_seconds=int(values.get("ollama_timeout_seconds", defaults.ollama_timeout_seconds)),
         task_timeout_seconds=int(values.get("task_timeout_seconds", defaults.task_timeout_seconds)),
         retention_days=int(values.get("retention_days", 0)),

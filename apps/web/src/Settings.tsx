@@ -11,8 +11,9 @@ export function Settings() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
-    const changes: Pick<LocalSettings, 'ollama_model' | 'ollama_timeout_seconds' | 'task_timeout_seconds' | 'retention_days'> = {
+    const changes: Pick<LocalSettings, 'ollama_model' | 'planning_style' | 'ollama_timeout_seconds' | 'task_timeout_seconds' | 'retention_days'> = {
       ollama_model: String(form.get('ollama_model') || '').trim(),
+      planning_style: String(form.get('planning_style')) as LocalSettings['planning_style'],
       ollama_timeout_seconds: Number(form.get('ollama_timeout_seconds')),
       task_timeout_seconds: Number(form.get('task_timeout_seconds')),
       retention_days: Number(form.get('retention_days')),
@@ -24,8 +25,9 @@ export function Settings() {
   return <main>
     <div className="page-heading"><p className="kicker">Local configuration</p><h1>Settings.</h1><p>Choose a model and execution limits. Folder grants stay in the operator's local environment file.</p></div>
     {settings.isLoading ? <section className="empty-panel"><p>Loading settings…</p></section> : settings.isError || !settings.data ? <section className="empty-panel"><p role="alert">{settings.error?.message || 'Settings unavailable'}</p></section> : <>
-      <form className="form-panel" key={`${settings.data.ollama_model}-${settings.data.ollama_timeout_seconds}-${settings.data.task_timeout_seconds}-${settings.data.retention_days}`} onSubmit={submit}>
+      <form className="form-panel" key={`${settings.data.ollama_model}-${settings.data.planning_style}-${settings.data.ollama_timeout_seconds}-${settings.data.task_timeout_seconds}-${settings.data.retention_days}`} onSubmit={submit}>
         <label htmlFor="setting-model">Installed Ollama model <span className="optional">optional</span></label><input id="setting-model" name="ollama_model" defaultValue={settings.data.ollama_model} maxLength={100} placeholder="qwen3.5:9b" />
+        <label htmlFor="setting-planning-style">Planning style</label><select id="setting-planning-style" name="planning_style" defaultValue={settings.data.planning_style}><option value="concise">Concise plan</option><option value="detailed">Detailed plan</option></select>
         <label htmlFor="setting-model-timeout">Model planning timeout, seconds</label><input id="setting-model-timeout" name="ollama_timeout_seconds" type="number" min={10} max={180} required defaultValue={settings.data.ollama_timeout_seconds} />
         <label htmlFor="setting-task-timeout">Task dispatch deadline, seconds</label><input id="setting-task-timeout" name="task_timeout_seconds" type="number" min={60} max={86400} required defaultValue={settings.data.task_timeout_seconds} />
         <p className="help-text">The deadline stops new tool actions after it expires. An action already in progress may finish.</p>
