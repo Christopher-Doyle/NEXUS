@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api, type Approval, type JournalEvent } from './api'
@@ -13,6 +13,7 @@ function eventLabel(event: JournalEvent): string {
 
 export function Cockpit() {
   const { id } = useParams()
+  const [reconnecting, setReconnecting] = useState(false)
   const queryClient = useQueryClient()
   const task = useQuery({ queryKey: ['task', id], queryFn: () => api.getTask(id!), enabled: Boolean(id) })
   const terminal = ['completed', 'failed', 'cancelled'].includes(task.data?.state || '')
@@ -40,6 +41,8 @@ export function Cockpit() {
       queryClient.invalidateQueries({ queryKey: ['approvals'] })
     }
     events.addEventListener('update', update)
+    events.onopen = () => { setReconnecting(false); update() }
+    events.onerror = () => { setReconnecting(true); update() }
     return () => { events.removeEventListener('update', update); events.close() }
   }, [id, queryClient, terminal])
 
@@ -53,7 +56,7 @@ export function Cockpit() {
     {needsRecovery && <section className="approval-panel"><h2>Report recovery required</h2>{recovery.isLoading ? <p>Inspecting the report file…</p> : recovery.isError ? <p role="alert">{recovery.error.message}</p> : recovery.data && <><p>The worker stopped during a report write. NEXUS will not repeat this action automatically.</p><p><strong>{recovery.data.filename}</strong> · {recovery.data.status === 'matches' ? 'File matches the expected report' : recovery.data.status === 'absent' ? 'No report file was found' : 'File needs operator inspection'}</p><small>Expected SHA-256: {recovery.data.expected_sha256}{recovery.data.actual_sha256 && ` · Found: ${recovery.data.actual_sha256}`}</small><div className="recovery-actions">{recovery.data.status === 'matches' && <button className="button" onClick={() => resolveRecovery.mutate('accept_existing')} disabled={resolveRecovery.isPending}>Accept verified report</button>}{recovery.data.status === 'absent' && <button className="button" onClick={() => resolveRecovery.mutate('confirm_absent')} disabled={resolveRecovery.isPending}>Confirm report absent</button>}{['mismatch', 'unsafe'].includes(recovery.data.status) && <p role="alert">The saved file differs from the expected report or has an unsafe path. Inspect the local data directory before resolving this task.</p>}</div></>}</section>}
     {(decision.isError || cancel.isError || pause.isError || resume.isError || resolveRecovery.isError) && <p role="alert" className="form-error">{decision.error?.message || cancel.error?.message || pause.error?.message || resume.error?.message || resolveRecovery.error?.message}</p>}
     <section className="empty-panel"><h2>Steps</h2><ol className="timeline">{task.data.steps.map(step => <li key={step.id}><span>{step.description}</span><span className={`chip ${step.state}`}>{step.state}</span></li>)}</ol></section>
-    <section className="empty-panel"><h2>Execution journal</h2>{journal.isLoading ? <p>Loading events…</p> : journal.isError ? <p role="alert">{journal.error.message}</p> : <ol className="journal">{journal.data?.map(event => {
+    <section className="empty-panel"><h2>Execution journal</h2>{reconnecting && !terminal && <p role="status">Live updates disconnected. Reconnecting and refreshing the journal…</p>}{journal.isLoading ? <p>Loading events…</p> : journal.isError ? <p role="alert">{journal.error.message}</p> : <ol className="journal">{journal.data?.map(event => {
       const result = event.payload.result as { matches?: { source: string; line: number; excerpt: string }[]; truncated?: boolean } | undefined
       return <li key={event.id}><time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time><strong>{eventLabel(event)}</strong>{event.payload.tool_name === 'search_local_docs' && result?.matches && <details><summary>{result.matches.length} source matches{result.truncated ? ' (limit reached)' : ''}</summary><ul>{result.matches.map((match, index) => <li key={`${match.source}-${match.line}-${index}`}><strong>{match.source}:{match.line}</strong> {match.excerpt}</li>)}</ul></details>}</li>
     })}</ol>}</section>

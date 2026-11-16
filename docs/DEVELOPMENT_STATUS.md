@@ -70,6 +70,10 @@ cross-cutting acceptance gap against actual code and test evidence.
   endpoint remain environment-only.
 - Local mutation rate limits and redacted, correlated 500 responses. Planning
   has a separate request bucket; the limiter is in-process and resets on restart.
+- Checked-in generated OpenAPI contract with a CI drift check. Validation
+  errors identify bounded field paths without echoing the submitted body.
+  The cockpit refreshes persisted state and shows reconnect status if its SSE
+  stream drops; the API supports `Last-Event-ID` and `after` replay.
 - Security review fixes reject ungranted network access, bound each task
   constraint, redact filesystem exceptions from journal errors and escape
   untrusted HTML in exported reports. Findings and open risks are tracked in
@@ -111,7 +115,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   updating the checkout to `13e1643`, 77 backend tests passed with three
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
-- `python -m pytest -q`: 97 passed, three symlink skips on this Windows host,
+- `python -m pytest -q`: 98 passed, three symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
@@ -201,7 +205,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   second across that short sample. This does not test sustained load or
   multi-user behavior.
 
-Remote CI passed all three jobs for the standalone HTTPS policy (`c18ec15`). The
+Remote CI passed all three jobs for the integrated HTTPS fetch (`7e5509e`). The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -217,8 +221,9 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `c18ec15` (standalone HTTPS
-policy). The integrated `fetch_url` tool is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `7e5509e` (integrated HTTPS
+fetch). The checked-in OpenAPI and SSE feedback are tested locally and pending
+commit.
 
 ## Known risks
 
@@ -231,7 +236,7 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Run the complete regression gates for the integrated HTTPS fetch, then commit,
-push and verify Linux CI. A real public fetch still requires explicit user
+Commit and push the checked-in OpenAPI contract, validation fields and SSE
+feedback; verify Linux CI. A real public fetch still requires explicit user
 authorization. Continue with the outstanding v1 UI, API and release criteria
 in the requirement matrix.

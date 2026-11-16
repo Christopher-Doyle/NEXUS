@@ -41,6 +41,16 @@ def test_mutation_body_is_bounded_with_and_without_content_length(monkeypatch) -
     assert client.post("/api/v1/missing", content=b"{}", headers=headers).status_code == 404
 
 
+def test_validation_error_names_the_field_without_echoing_submitted_value() -> None:
+    client = TestClient(app, base_url="http://127.0.0.1:8765")
+    response = client.post("/api/v1/tasks", json={"goal": "Private goal", "network_access": "not-a-boolean"}, headers={"x-nexus-intent": "local"})
+    assert response.status_code == 422
+    body = response.json()
+    assert body["code"] == "validation_error"
+    assert any(item["field"] == "body.network_access" for item in body["fields"])
+    assert "Private goal" not in response.text
+
+
 def test_unexpected_error_is_redacted_and_correlated() -> None:
     def broken_db():
         raise RuntimeError("SECRET_TOKEN_SHOULD_NOT_LEAK")

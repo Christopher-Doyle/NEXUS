@@ -12,6 +12,7 @@ jobs:
       - run: uv sync --frozen --extra dev
       - run: mkdir -p data && uv run alembic upgrade head
       - run: uv run ruff check app tests
+      - run: uv run python scripts/export_openapi.py --check
       - run: uv run pytest -q
   web:
     runs-on: ubuntu-latest

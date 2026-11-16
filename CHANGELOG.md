@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-16
 
+- Checked in the generated OpenAPI contract with a CI drift check, added
+  field paths to validation responses and documented SSE reconnection.
 - Added an opt-in HTTPS text fetch tool with public-address DNS checks,
   address-pinned TLS, same-origin redirects, response bounds and exact-step
   approval. Local SSRF and workflow tests use mocked connections; a real

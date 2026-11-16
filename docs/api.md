@@ -38,11 +38,16 @@ journal (up to 500 events), execution receipts (up to 100) and artifact
 metadata from these read endpoints. The export is a browser snapshot, not an
 atomic database backup; it excludes source file contents and artifact bytes.
 
-OpenAPI is available at `/docs` while the API runs. `POST /plan` accepts
+The checked-in [OpenAPI schema](openapi.json) is generated from the running
+FastAPI contract with `python scripts/export_openapi.py` from `services/api`;
+CI checks that it remains current. Interactive OpenAPI is at `/docs` while
+the API runs. `POST /plan` accepts
 `{"mode":"demo"}` or `{"mode":"ollama"}`. Ollama requires `OLLAMA_MODEL` in
 the environment; no model is downloaded automatically. The worker must run in
 a separate process for queued tasks to progress. API responses include a
 correlation ID for HTTP and validation errors.
+Validation errors include bounded `fields` entries with a field path, message
+and type, without echoing the submitted body.
 Mutation rate limits return 429 and `Retry-After`. Unexpected errors return a
 generic 500 body with a correlation ID; exception text is not sent to the client.
 Mutating request bodies are limited to 512 KiB before JSON parsing; larger
@@ -58,6 +63,14 @@ requires recovery inspection before the file is accepted or confirmed absent.
 `search_local_docs` is a read-only plan tool. It searches only the task's
 selected Markdown and text files, returning at most 20 line excerpts. A user
 can add the step during plan review and provide the literal search text.
+
+The event stream sends each event with an SSE `id`. On reconnect, a client can
+send `Last-Event-ID: <last processed id>` or use `?after=<id>` to replay later
+events, in batches of 100. Browser `EventSource` reconnects with its last ID;
+the cockpit also refreshes task, journal and receipts on reconnect or stream
+error. A new client should first read the task and journal snapshot, then
+open the stream using the last journal event ID. The journal endpoint returns
+up to 500 earliest events and is not a complete export for larger histories.
 
 `fetch_url` is a high-risk plan tool. Task creation must grant both the
 `fetch_url` capability and `network_access: true`; both are off by default.
