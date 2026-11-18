@@ -27,12 +27,14 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
 - [x] Automated keyboard paths, responsive screens, recovery fault injection,
       a sustained loopback readiness sample and a 40-task supervised worker
       sample are recorded.
-- [ ] Manual assistive technology review is recorded with an actual screen
+- [x] Manual assistive technology review is recorded with an actual screen
       reader and keyboard on the supported desktop and mobile views.
-      On 2026-11-18 the owner reported successful keyboard navigation and
-      Windows Narrator announcements of buttons, labels and status messages
-      while using NEXUS on desktop. A documented view-by-view and narrow-width
-      Narrator pass is still outstanding; do not mark this gate complete.
+      On 2026-11-18 the owner reported successful keyboard operation and
+      Windows Narrator announcements of buttons, labels and status messages.
+      The owner then confirmed the responsive interface worked in Chrome's
+      device emulation at 400px, after being asked to test navigation with
+      Narrator. This is owner-attested manual evidence, not independent audit
+      certification or testing on a physical mobile device.
 - [ ] User, security, API, architecture, operations and troubleshooting docs
       match observed behavior. Screenshots show the current UI.
 - [x] Owner approved MIT licensing and Semantic Versioning on 2026-11-18.
@@ -46,15 +48,16 @@ functional IDs and is not a release-readiness percentage.
 
 ## Manual release decisions
 
-- Test dashboard, plan, approval, cockpit, report comparison and Settings
-  with a screen reader and keyboard at desktop and mobile widths.
+- Owner reported a successful desktop Windows Narrator and keyboard review,
+  then confirmed the mobile-width check worked in Chrome at 400px on 2026-11-18.
+  The mobile result uses browser emulation, not a physical phone.
 - Owner accepted the documented same-user directory risk for a strictly
   local single-owner threat model on 2026-11-18. Reassess for any remote or
   hostile same-user environment.
 - Owner approved the MIT licence, Semantic Versioning and the narrowly scoped
   dependency exception expiring end of 2026-12-18 UTC.
-- Owner-reported desktop Windows Narrator and keyboard checks passed on
-  2026-11-18, including announcements of controls and status messages.
-  A view-by-view review at mobile width is still outstanding.
+- Owner-reported Windows Narrator, keyboard navigation and responsive
+  400px mobile-emulation checks passed on 2026-11-18. Any future release
+  with material UI changes should repeat these checks.
 - The three GitHub CI jobs passed at `75a7151`; final release candidate
   verification and release notes must still be completed.

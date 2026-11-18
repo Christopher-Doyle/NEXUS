@@ -295,9 +295,10 @@ compared two reports in the artifact view. The owner stated that a task was
 planned with Ollama; a previously recorded automated browser suite also
 verified installed-model planning and execution. The owner reported that
 keyboard navigation worked and Windows Narrator announced buttons, labels
-and status messages. This is user-reported desktop verification, not an
-independent assistive-technology certification or a completed mobile-width
-screen-reader review.
+and status messages. The owner then reported a successful Chrome 400px responsive-emulation
+navigation check after being asked to include Narrator. These are
+owner-attested manual checks, not independent accessibility certification
+or testing on a physical mobile device.
 
 At commit `75a7151`, all three GitHub Actions CI jobs passed, including the
 owner-approved, advisory-specific temporary development-tool audit policy
@@ -307,9 +308,11 @@ must be verified again after any further changes.
 ## Version control
 
 The optional light appearance, refreshed screenshots, restored-read backup
-check and 13-case installed-model browser suite passed locally. `main` is
-pushed and clean at this checkpoint. The latest GitHub API and browser jobs
-passed, while the web job failed solely at the full dependency audit.
+check and 13-case installed-model browser suite passed locally. The owner-
+approved narrow development-tool advisory exception was implemented at
+`75a7151`; its API, web and browser GitHub CI jobs all passed. A final
+release-candidate CI run is required after the release documentation is
+updated; v1.0.0 is not yet tagged.
 
 ## Known risks
 
@@ -322,9 +325,11 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Complete the manual assistive-technology review and the remaining release
-checklist, verify the approved narrowly scoped audit policy on GitHub Actions,
-and remove it when a patched dependency is available. Owner approved the MIT
+Finish the remaining release checklist, including explicit v1 scope acceptance
+and final documentation review, then verify CI on the release-candidate
+commit. The documented accessibility review is owner-attested as passed.
+Remove the temporary narrow audit exception when a patched dependency is
+available. Owner approved the MIT
 licence, Semantic Versioning and the documented same-user local-only threat
 model limitation on 2026-11-18. No stable v1.0.0 release or tag has been
 created; all remaining release gates must pass before tagging. The one-time

@@ -28,10 +28,14 @@ See [security audit](security-audit.md) for the precise limitations.
 - Review at every release candidate and immediately if an upstream patch becomes available; remove the exception in favour of a tested, compatible fix.
 - Never accept untrusted glob patterns in project tooling while this vulnerability remains.
 
-## Unresolved manual release gate
+## Recorded accessibility evidence and remaining release gates
 
-On 2026-11-18 the owner reported successful desktop keyboard navigation and
-Windows Narrator announcements of buttons, labels and status messages in NEXUS.
-A documented view-by-view assistive-technology check at mobile width is still
-outstanding. Do not mark the application stable or create `v1.0.0` until that
-check and the remaining release gates pass.
+On 2026-11-18 the owner reported successful keyboard navigation and Windows
+Narrator announcements of buttons, labels and status messages in NEXUS. The
+owner subsequently tested Chrome responsive emulation at 400px and confirmed
+mobile navigation worked after the requested Narrator check. This is
+owner-reported manual evidence on a desktop browser, **not** an independent
+assistive-technology certification or a physical-device test.
+
+Do not create `v1.0.0` until the remaining scope, documentation and final
+release-candidate CI checks are completed and recorded in the release checklist.
