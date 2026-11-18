@@ -35,6 +35,8 @@ rejected and produced no artifact.
 ![Editable plan review](docs/screenshots/plan.png)
 ![Scoped report approval](docs/screenshots/approval.png)
 ![Completed execution and artifact](docs/screenshots/cockpit.png)
+![Comparison of two verified reports](docs/screenshots/report-comparison.png)
+![Light appearance on mobile Settings](docs/screenshots/settings-light-mobile.png)
 
 ## Design principles
 
@@ -56,7 +58,8 @@ rejected and produced no artifact.
 | Execution cockpit | Persisted status, events, receipts, approvals, pause, resume and cancellation |
 | History and retention | Searchable task history, cursor-paged journal export, confirmed deletion and optional age-based cleanup |
 | Recovery | Safe read retries and exact report-file reconciliation after uncertain writes |
-| Evidence | Cited Markdown reports, verified artifact preview and download |
+| Evidence | Cited Markdown reports, verified artifact preview, comparison and download |
+| Appearance | Dark default and optional browser-persisted light theme |
 
 ## Run locally
 

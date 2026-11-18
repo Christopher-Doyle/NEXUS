@@ -55,6 +55,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   timeline, approval controls, journal and artifact links.
 - A mobile navigation menu opens on demand, closes after navigation and
   exposes its expanded state to assistive technology.
+- Optional light appearance is stored per browser. Dark remains the default;
+  a mobile Settings axe check covers light-theme contrast and persistence.
 - Paginated artifact library with links to the source task and verified downloads.
 - The artifact library previews verified report text in-app with a 512 KiB
   client bound, while preserving a separate download and source-task link.
@@ -153,6 +155,11 @@ cross-cutting acceptance gap against actual code and test evidence.
   It also confirms and persists a 30-day retention choice after reload.
   Automated WCAG A/AA checks pass on five core views after correcting the
   plan reorder buttons' accessible names.
+- The refreshed synthetic screenshots show the fully generated plan, scoped
+  approval, completed cockpit, loaded overview, two-report comparison and
+  mobile light Settings. The screenshot run passed all nine standard browser
+  tests, with the opt-in Ollama case skipped. Mobile light-mode axe checks
+  found no WCAG A/AA violations, and the preference survived reload.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
 - With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all ten browser tests passed on
@@ -161,7 +168,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   the report write was approved and the task completed.
 - The browser flow downloads a per-task JSON history export and checks its
   task state, journal, report execution receipt and artifact metadata.
-- `npm audit`: zero vulnerabilities after updating Vitest.
+- `npm audit` previously reported zero vulnerabilities after updating Vitest;
+  a subsequent upstream `picomatch` advisory now fails the full audit gate.
 - Browser smoke test: task creation, plan review, approval, report artifact,
   persisted history after API restart, and rejection with no artifact passed.
   Four synthetic screenshots were captured and visually inspected.
@@ -267,9 +275,9 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `6432ce0` (verified report
-comparison). The one-shot public fetch verification and evidence are pending
-commit.
+The optional light appearance and refreshed screenshots passed local frontend
+and browser regression. GitHub CI must still validate this checkpoint; the
+full dependency audit is known to fail on the upstream advisory.
 
 ## Known risks
 
@@ -282,9 +290,8 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push the one-shot public fetch evidence and audit finding, then
-verify Linux CI. Monitor for a reviewed upstream `picomatch` patch and update
-the lockfile when available; the full audit gate is currently a release
-blocker.
+Verify Linux CI for this checkpoint and complete the remaining manual and
+recovery acceptance checks. Monitor for a reviewed upstream `picomatch` patch and update the
+lockfile when available; the full audit gate is currently a release blocker.
 The one-time outbound authorization has been consumed. Continue with the
 remaining v1 release criteria in the requirement matrix.

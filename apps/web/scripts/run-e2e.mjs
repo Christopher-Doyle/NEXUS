@@ -47,7 +47,7 @@ try {
   start(python, ['-m', 'app.worker'], apiRoot)
   const web = start(process.execPath, [join(webRoot, 'node_modules', 'vite', 'bin', 'vite.js'), '--host', '127.0.0.1', '--port', '5173', '--strictPort'], webRoot)
   await ready('http://127.0.0.1:5173/', web)
-  await run(process.execPath, [join(webRoot, 'node_modules', '@playwright', 'test', 'cli.js'), 'test', '--config', 'playwright.config.ts'], webRoot)
+  await run(process.execPath, [join(webRoot, 'node_modules', '@playwright', 'test', 'cli.js'), 'test', '--config', 'playwright.config.ts', ...process.argv.slice(2)], webRoot)
   exitCode = 0
 } catch (error) {
   process.stderr.write(`${error.message}\n`)

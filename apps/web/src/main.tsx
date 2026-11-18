@@ -105,4 +105,5 @@ function App() {
   </aside><Routes><Route path="/" element={<Dashboard />} /><Route path="/tasks/new" element={<NewTask />} /><Route path="/tasks/:id/plan" element={<PlanReview />} /><Route path="/tasks/:id/run" element={<Cockpit />} /><Route path="/history" element={<History />} /><Route path="/artifacts" element={<Artifacts />} /><Route path="/settings" element={<Settings />} /></Routes></div>
 }
 
+document.documentElement.dataset.theme = window.localStorage.getItem('nexus-theme') === 'light' ? 'light' : 'dark'
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></React.StrictMode>)

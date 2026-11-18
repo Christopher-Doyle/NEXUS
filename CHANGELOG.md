@@ -4,6 +4,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-18
 
+- Added a browser-persisted optional light appearance with a mobile automated
+  accessibility and contrast check; dark remains the default.
 - Recorded the newly reported unpatched `picomatch` ReDoS advisory in
   development tooling; the full npm audit and web CI gate remain failing.
 - Verified one owner-approved public HTTPS request to `https://example.com/`

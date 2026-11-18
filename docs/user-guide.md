@@ -36,6 +36,8 @@ is off by default. A 30, 90 or 365 day period lets the worker remove eligible
 task records and NEXUS-owned files in batches. **Delete** in History requires
 the inactive task's exact ID. Neither cleanup path removes an external folder
 selected for reading.
+The Appearance control switches between dark and light colors in this browser
+and persists the choice on reload. It does not change task data or API settings.
 
 Task history export contains metadata, the bounded journal, receipts and
 artifact records. It is not a full backup and does not include report bytes.

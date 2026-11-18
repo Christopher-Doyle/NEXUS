@@ -1,5 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { join } from 'node:path'
+
+async function capture(page: import('@playwright/test').Page, filename: string) {
+  if (process.env.NEXUS_CAPTURE_SCREENSHOTS === '1') {
+    await page.screenshot({ path: join(process.cwd(), '..', '..', 'docs', 'screenshots', filename), fullPage: true })
+  }
+}
 
 test('approved demo completes with a report and persisted history', async ({ page }) => {
   await page.goto('/')
@@ -7,13 +14,17 @@ test('approved demo completes with a report and persisted history', async ({ pag
   await page.getByRole('button', { name: 'Create task' }).click()
   await page.getByRole('button', { name: 'Generate plan' }).click()
   await expect(page.getByRole('heading', { name: 'Review the steps.' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start approved plan' })).toBeVisible()
+  await capture(page, 'plan.png')
   const planA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   expect(planA11y.violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => ({ target: node.target, html: node.html })) }))).toEqual([])
   await page.getByRole('button', { name: 'Start approved plan' }).click()
   await expect(page.getByRole('heading', { name: 'Approval required' })).toBeVisible()
+  await capture(page, 'approval.png')
   await page.getByRole('button', { name: 'Approve write' }).click()
   await expect(page.locator('.cockpit-head .chip')).toHaveText('completed')
   await expect(page.getByRole('heading', { name: 'Tool receipts' })).toBeVisible()
+  await capture(page, 'cockpit.png')
   await expect(page.getByText('Step 1: read_file v1 · attempt 1 · completed')).toBeVisible()
   const reportLink = page.getByRole('link', { name: 'project-report.md' })
   await expect(reportLink).toBeVisible()
@@ -24,6 +35,9 @@ test('approved demo completes with a report and persisted history', async ({ pag
   expect(await report.text()).toContain('## Citations')
   const cockpitA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   expect(cockpitA11y.violations.map(item => item.id)).toEqual([])
+  await page.goto('/')
+  await expect(page.getByText('Read the sample project notes and generate a structured report.')).toBeVisible()
+  await capture(page, 'overview.png')
   await page.getByRole('link', { name: 'History' }).click()
   await expect(page.getByRole('link', { name: 'Read the sample project notes and generate a structured report.' })).toBeVisible()
   const [download] = await Promise.all([
@@ -74,6 +88,7 @@ test('verified reports can be compared inside the artifact library', async ({ pa
   await expect(page.locator('.diff-added')).toContainText(['Compare report beta from sample notes.'])
   const comparisonA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   expect(comparisonA11y.violations.map(item => item.id)).toEqual([])
+  await capture(page, 'report-comparison.png')
 })
 
 test('mobile settings remain usable and persist a deadline', async ({ page }) => {
@@ -106,6 +121,14 @@ test('mobile settings remain usable and persist a deadline', async ({ page }) =>
   await page.getByLabel('Planning style').selectOption('concise')
   await page.getByRole('button', { name: 'Save settings' }).click()
   await expect(page.getByRole('status')).toHaveText('Settings saved locally.')
+  await page.getByLabel('Appearance').selectOption('light')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  const lightA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+  expect(lightA11y.violations.map(item => ({ id: item.id, nodes: item.nodes.map(node => ({ target: node.target, html: node.html })) }))).toEqual([])
+  await capture(page, 'settings-light-mobile.png')
+  await page.reload()
+  await expect(page.getByLabel('Appearance')).toHaveValue('light')
+  await page.getByLabel('Appearance').selectOption('dark')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
 

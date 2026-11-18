@@ -1,8 +1,9 @@
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, type LocalSettings } from './api'
 
 export function Settings() {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
   const queryClient = useQueryClient()
   const settings = useQuery({ queryKey: ['settings'], queryFn: api.settings })
   const model = useQuery({ queryKey: ['model'], queryFn: api.modelStatus, retry: false })
@@ -37,6 +38,7 @@ export function Settings() {
         <button className="button" disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save settings'}</button>
       </form>
       <section className="empty-panel"><h2>System boundaries</h2><div className="status-row"><span>Local model</span><strong className={model.data?.available ? 'good' : 'muted'}>{model.isLoading ? 'Checking…' : model.data?.available ? 'Ready' : 'Unavailable'}</strong></div><p>{model.data?.message || 'Demo planning works without a model.'}</p><p>{settings.data.approved_workspace_count} operator-approved workspace{settings.data.approved_workspace_count === 1 ? '' : 's'} configured. Public HTTPS fetches are off by default and require a task grant plus exact approval.</p></section>
+      <section className="empty-panel"><h2>Appearance</h2><label htmlFor="setting-theme">Appearance</label><select id="setting-theme" className="theme-select" value={theme} onChange={event => { const value = event.target.value === 'light' ? 'light' : 'dark'; setTheme(value); document.documentElement.dataset.theme = value; window.localStorage.setItem('nexus-theme', value) }}><option value="dark">Dark</option><option value="light">Light</option></select><p>This preference is stored in this browser.</p></section>
     </>}
   </main>
 }
