@@ -142,8 +142,9 @@ cross-cutting acceptance gap against actual code and test evidence.
   Windows symlink skips; Ruff, three frontend tests and six standard browser
   tests passed (one opt-in Ollama test skipped).
 - An isolated backup/restore check migrated a temporary database, saved a
-  synthetic artifact, copied and restored the stopped data directory, reran
-  migrations and verified the artifact download digest. CI now runs this gate.
+  synthetic artifact and an expired read lease, copied and restored the
+  stopped data directory, reran migrations, verified the artifact download
+  digest and completed the restored read on attempt two. CI runs this gate.
 - `python -m pytest -q`: 102 passed, four POSIX/symlink skips on this Windows host,
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
@@ -258,8 +259,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   tooling. `npm audit --omit=dev --audit-level=high` found zero production
   dependency vulnerabilities. The full audit CI gate remains enabled.
 
-Remote CI for report comparison (`6432ce0`) passed API and browser jobs but
-failed the web job at the new `picomatch` dependency audit. The
+Remote CI for the light-theme checkpoint (`40d9470`) passed API and browser
+jobs but failed the web job at the new `picomatch` dependency audit. The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
