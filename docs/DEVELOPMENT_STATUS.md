@@ -161,6 +161,10 @@ cross-cutting acceptance gap against actual code and test evidence.
   mobile light Settings. The screenshot run passed all nine standard browser
   tests, with the opt-in Ollama case skipped. Mobile light-mode axe checks
   found no WCAG A/AA violations, and the preference survived reload.
+- Three additional light-theme browser checks found no automated WCAG A/AA
+  violations on the dashboard, task form and Settings page.
+- The report comparison browser test confirms keyboard Tab navigation from
+  Before to After to the scrollable, labelled diff list.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
 - With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all ten browser tests passed on
@@ -259,7 +263,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   tooling. `npm audit --omit=dev --audit-level=high` found zero production
   dependency vulnerabilities. The full audit CI gate remains enabled.
 
-Remote CI for the light-theme checkpoint (`40d9470`) passed API and browser
+Remote CI for the backup-recovery checkpoint (`9f063cf`) passed API and browser
 jobs but failed the web job at the new `picomatch` dependency audit. The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.

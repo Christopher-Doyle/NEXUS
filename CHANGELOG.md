@@ -20,7 +20,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 - Displayed API validation field paths and correlated server-error references
   in the web client.
 - Added an isolated backup/restore verification script and CI gate covering
-  migration and integrity-checked artifact download.
+  migration, SQLite integrity, verified artifact download and recovery of an
+  interrupted read lease.
 - Updated README capability and launch descriptions to match the tested
   application and its open release gates.
 - Hardened POSIX report creation with a pinned no-follow directory handle,

@@ -86,6 +86,11 @@ test('verified reports can be compared inside the artifact library', async ({ pa
   await expect(page.getByRole('list', { name: 'Report differences' })).toBeVisible()
   await expect(page.locator('.diff-removed')).toContainText(['Compare report alpha from sample notes.'])
   await expect(page.locator('.diff-added')).toContainText(['Compare report beta from sample notes.'])
+  await page.getByLabel('Before').focus()
+  await page.keyboard.press('Tab')
+  await expect(page.getByLabel('After')).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('list', { name: 'Report differences' })).toBeFocused()
   const comparisonA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   expect(comparisonA11y.violations.map(item => item.id)).toEqual([])
   await capture(page, 'report-comparison.png')
@@ -184,8 +189,9 @@ test('installed local Ollama model runs a reviewed plan', async ({ page }) => {
   await expect(page.locator('.cockpit-head .chip')).toHaveText('completed', { timeout: 60_000 })
 })
 
-for (const path of ['/', '/tasks/new', '/settings']) {
-  test(`core page ${path} has no automated WCAG A or AA findings`, async ({ page }) => {
+for (const theme of ['dark', 'light']) for (const path of ['/', '/tasks/new', '/settings']) {
+  test(`${theme} core page ${path} has no automated WCAG A or AA findings`, async ({ page }) => {
+    await page.addInitScript(value => window.localStorage.setItem('nexus-theme', value), theme)
     await page.goto(path)
     if (path === '/settings') await expect(page.getByRole('button', { name: 'Save settings' })).toBeVisible()
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
