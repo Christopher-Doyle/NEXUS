@@ -4,6 +4,11 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-18
 
+- Recorded the newly reported unpatched `picomatch` ReDoS advisory in
+  development tooling; the full npm audit and web CI gate remain failing.
+- Verified one owner-approved public HTTPS request to `https://example.com/`
+  through an isolated NEXUS task after exact approval, with one outbound call
+  and no private inputs.
 - Added bounded, keyboard-accessible comparison of two verified report
   artifacts, with added/removed line labels and a browser accessibility check.
 - Added persisted concise/detailed Ollama planning styles using fixed reviewed
@@ -32,8 +37,7 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   field paths to validation responses and documented SSE reconnection.
 - Added an opt-in HTTPS text fetch tool with public-address DNS checks,
   address-pinned TLS, same-origin redirects, response bounds and exact-step
-  approval. Local SSRF and workflow tests use mocked connections; a real
-  public fetch remains unverified.
+  approval. Automated SSRF and workflow tests use mocked connections.
 - Added a supervised worker that terminates tools at their registered process
   deadlines and records recoverable outcomes for uncertain report writes.
 - Rejected ambiguous Windows and POSIX path syntax; verified opened-file

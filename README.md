@@ -23,7 +23,7 @@ NEXUS is a local personal AI operations console: users define an objective, revi
 
 ## Project status
 
-> **Working local demo in development** — Tasks, plans, approvals, journals and artifacts persist in SQLite. A supervised worker runs four allowlisted tools with bounded timeouts and exact approval for writes and opt-in HTTPS fetch. The cockpit shows receipts and report recovery. History exports task records; inactive tasks can be deleted, and terminal-task retention is optional. The artifact library previews verified reports. Automated backend, frontend and browser checks cover the local workflow. A real approved public fetch, manual assistive technology review and other [release gates](docs/release-checklist.md) remain open. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [security review](docs/security-audit.md) and [changelog](CHANGELOG.md).
+> **Working local demo in development** — Tasks, plans, approvals, journals and artifacts persist in SQLite. A supervised worker runs four allowlisted tools with bounded timeouts and exact approval for writes and opt-in HTTPS fetch. The cockpit shows receipts and report recovery. History exports task records; inactive tasks can be deleted, and terminal-task retention is optional. The artifact library previews and compares verified reports. Automated backend, frontend and browser checks cover the local workflow. One owner-approved public HTTPS fetch completed through the task and approval path. Manual assistive technology review and other [release gates](docs/release-checklist.md) remain open. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [security review](docs/security-audit.md) and [changelog](CHANGELOG.md).
 
 ### Verified local demo
 
@@ -134,9 +134,9 @@ For the working demo, follow [local setup](docs/development.md), launch the API,
 worker and web client, create a task, generate the deterministic plan, review
 it, start execution, and approve or reject the scoped report write. The model
 remains optional. A task can separately opt into a bounded public HTTPS text
-fetch, which requires exact approval before the worker connects. A real public
-fetch has not yet been verified; local policy and workflow tests use mocked
-connections.
+fetch, which requires exact approval before the worker connects. One
+owner-approved request to `https://example.com/` completed in an isolated
+NEXUS task. Routine browser tests still use mocked connections.
 
 See the [user guide](docs/user-guide.md), [operations and backup](docs/operations.md),
 [troubleshooting](docs/troubleshooting.md), [security policy](SECURITY.md) and

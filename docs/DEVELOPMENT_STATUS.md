@@ -105,8 +105,9 @@ cross-cutting acceptance gap against actual code and test evidence.
 ## Incomplete
 
 - Public HTTPS text fetch is implemented with exact approval and SSRF tests;
-  a real public target has not yet been exercised. General document parsers
-  remain out of scope for the current text tools.
+  one owner-approved `https://example.com/` request completed in an isolated
+  task with one outbound call after approval. General document parsers remain
+  out of scope for the current text tools.
 - SQLite scheduling uses an immediate transaction and active step leases.
   Two Windows processes completed a shared 12-task queue with one execution
   per task. The task deadline stops future tool dispatch; the registered tool
@@ -145,8 +146,8 @@ cross-cutting acceptance gap against actual code and test evidence.
   one dependency deprecation warning.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
-- `npm test`: five frontend API tests passed.
-- `npm run test:e2e`: eight standard browser tests passed with installed Chrome, fresh
+- `npm test`: seven frontend tests passed, including bounded report diff checks.
+- `npm run test:e2e`: nine standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
   It also confirms and persists a 30-day retention choice after reload.
@@ -154,7 +155,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   plan reorder buttons' accessible names.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
-- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all nine browser tests passed on
+- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all ten browser tests passed on
   the current checkout;
   the installed model generated a plan, the supervised worker executed it,
   the report write was approved and the task completed.
@@ -236,8 +237,21 @@ cross-cutting acceptance gap against actual code and test evidence.
   4.27 ms p95 and 23.41 ms maximum, about 1,161.2 requests per second.
   This is loopback database-readiness throughput on one host, not task
   execution or multi-user capacity.
+- An isolated migrated task with only one `fetch_url` step reached completed
+  after exact approval for `https://example.com/`. The one-shot harness
+  counted zero outbound requests before approval and exactly one after;
+  the receipt contained source URL and SHA-256 without source text in the
+  receipt response. This exercised the direct task worker path, not the
+  supervised child on a live connection. The owner-approved one-time public
+  authorization is consumed.
+- On 2026-11-18, full `npm audit --audit-level=high` failed with five findings
+  from the new `picomatch@4.0.7` ReDoS advisory; the upstream advisory lists
+  no patched version. The affected package is in Vite/Vitest development
+  tooling. `npm audit --omit=dev --audit-level=high` found zero production
+  dependency vulnerabilities. The full audit CI gate remains enabled.
 
-Remote CI passed all three jobs for sustained loopback measurement (`5b9c0e3`). The
+Remote CI for report comparison (`6432ce0`) passed API and browser jobs but
+failed the web job at the new `picomatch` dependency audit. The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
 Ollama is installed with
@@ -253,8 +267,9 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `0432bba` (bounded planning
-styles). Verified report comparison is tested locally and pending commit.
+Latest pushed commit before this checkpoint: `6432ce0` (verified report
+comparison). The one-shot public fetch verification and evidence are pending
+commit.
 
 ## Known risks
 
@@ -267,7 +282,9 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push verified report comparison, then verify Linux CI. The owner
-approved one public HTTPS fetch to `https://example.com/`; exercise that exact
-approval in an isolated NEXUS task and record the result. Continue with the
+Commit and push the one-shot public fetch evidence and audit finding, then
+verify Linux CI. Monitor for a reviewed upstream `picomatch` patch and update
+the lockfile when available; the full audit gate is currently a release
+blocker.
+The one-time outbound authorization has been consumed. Continue with the
 remaining v1 release criteria in the requirement matrix.

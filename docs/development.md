@@ -54,6 +54,10 @@ response text at 64 KiB. Fetch failures or uncertain interrupted attempts
 stop for review; the worker does not replay them automatically. Do not put
 credentials in URLs: URLs and fetched text are stored in local task records.
 The ordinary demo and browser suite make no real public network requests.
+The one-shot `scripts/verify_public_fetch_once.py` harness is intentionally
+excluded from CI. It is fixed to `https://example.com/` and requires fresh
+owner approval before each invocation; the 2026-11-18 one-time authorization
+has been consumed.
 
 ## Reproducible browser demo
 

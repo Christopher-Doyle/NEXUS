@@ -35,8 +35,9 @@ approval. The fetch policy allows public HTTPS port 443 only, rejects userinfo,
 ambiguous URL syntax and non-public DNS answers, pins the TCP connection to a
 validated address with the original TLS hostname, revalidates same-origin
 redirects, and caps redirects, time and response bytes. Mocked policy and
-approval tests pass. A real public fetch is awaiting explicit external-access
-approval at this checkpoint.
+approval tests pass. One owner-approved public request to
+`https://example.com/` completed in an isolated task after exact approval;
+the one-time authorization has been consumed.
 
 Report writes require an unexpired approval tied to the task, plan version,
 step and argument hash. The worker uses exclusive creation for the output file

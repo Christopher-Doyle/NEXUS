@@ -5,7 +5,7 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
 
 - [ ] Every agreed v1 requirement is complete or has an explicit accepted
       limitation, including P1 items within the agreed scope.
-- [ ] A real public HTTPS fetch passes with owner-approved external access;
+- [x] A real public HTTPS fetch passes with owner-approved external access;
       SSRF, approval and uncertain-recovery tests pass on Linux and Windows.
 - [ ] The same-user report directory replacement race is resolved or its
       residual risk is explicitly accepted for the local threat model.
@@ -13,6 +13,8 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       supported schema. Backup and restore are exercised with artifacts.
 - [ ] Backend tests, Ruff, OpenAPI drift check, frontend tests, type check,
       production build, dependency audit and isolated browser suite pass.
+      Full audit currently fails on unpatched development-tool
+      `picomatch` [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf).
 - [ ] Installed-model Ollama plan and execution pass when a local model is
       available; otherwise record that this gate was not run.
 - [ ] Manual keyboard and assistive technology review, responsive screens,
