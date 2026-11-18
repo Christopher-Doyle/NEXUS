@@ -55,6 +55,27 @@ test('rejected report write produces no artifact', async ({ page }) => {
   await expect(page.getByText('No report has been written yet.')).toBeVisible()
 })
 
+test('verified reports can be compared inside the artifact library', async ({ page }) => {
+  for (const goal of ['Compare report alpha from sample notes.', 'Compare report beta from sample notes.']) {
+    await page.goto('/tasks/new')
+    await page.getByLabel('Goal').fill(goal)
+    await page.getByRole('button', { name: 'Create task' }).click()
+    await page.getByRole('button', { name: 'Generate plan' }).click()
+    await page.getByRole('button', { name: 'Start approved plan' }).click()
+    await expect(page.getByRole('heading', { name: 'Approval required' })).toBeVisible()
+    await page.getByRole('button', { name: 'Approve write' }).click()
+    await expect(page.locator('.cockpit-head .chip')).toHaveText('completed')
+  }
+  await page.getByRole('link', { name: 'Artifacts' }).click()
+  await page.getByLabel('Before').selectOption({ label: 'project-report.md — Compare report alpha from sample notes.' })
+  await page.getByLabel('After').selectOption({ label: 'project-report.md — Compare report beta from sample notes.' })
+  await expect(page.getByRole('list', { name: 'Report differences' })).toBeVisible()
+  await expect(page.locator('.diff-removed')).toContainText(['Compare report alpha from sample notes.'])
+  await expect(page.locator('.diff-added')).toContainText(['Compare report beta from sample notes.'])
+  const comparisonA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+  expect(comparisonA11y.violations.map(item => item.id)).toEqual([])
+})
+
 test('mobile settings remain usable and persist a deadline', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')

@@ -58,6 +58,9 @@ cross-cutting acceptance gap against actual code and test evidence.
 - Paginated artifact library with links to the source task and verified downloads.
 - The artifact library previews verified report text in-app with a 512 KiB
   client bound, while preserving a separate download and source-task link.
+- The library compares two verified Markdown reports on the same page using
+  an in-app line diff, bounded to 200 lines per report. Keyboard focus and
+  screen-reader line labels accompany added and removed lines.
 - Confirmed deletion of inactive tasks removes their database journal,
   execution records, NEXUS-owned inputs and artifacts. External approved
   workspaces are excluded from cleanup.
@@ -250,9 +253,8 @@ next full run passed.
 
 ## Version control
 
-Latest pushed commit before this checkpoint: `5b9c0e3` (sustained loopback
-measurement). Bounded planning-style configuration is tested locally and
-pending commit.
+Latest pushed commit before this checkpoint: `0432bba` (bounded planning
+styles). Verified report comparison is tested locally and pending commit.
 
 ## Known risks
 
@@ -265,6 +267,7 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Commit and push bounded planning-style configuration, then verify Linux CI.
-A real public fetch still requires explicit user authorization. Continue with
-the outstanding v1 UI and release criteria in the requirement matrix.
+Commit and push verified report comparison, then verify Linux CI. The owner
+approved one public HTTPS fetch to `https://example.com/`; exercise that exact
+approval in an isolated NEXUS task and record the result. Continue with the
+remaining v1 release criteria in the requirement matrix.

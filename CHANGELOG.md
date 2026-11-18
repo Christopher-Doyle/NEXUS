@@ -2,8 +2,10 @@
 
 This file tracks development checkpoints. NEXUS has not had a stable release.
 
-## Unreleased — 2026-11-16
+## Unreleased — 2026-11-18
 
+- Added bounded, keyboard-accessible comparison of two verified report
+  artifacts, with added/removed line labels and a browser accessibility check.
 - Added persisted concise/detailed Ollama planning styles using fixed reviewed
   prompt variants and the existing plan validation boundary.
 - Added a bounded sustained loopback readiness sample to the isolated
