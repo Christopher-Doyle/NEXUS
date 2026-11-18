@@ -150,7 +150,7 @@ cross-cutting acceptance gap against actual code and test evidence.
 - `ruff check app tests`: passed.
 - `npm run build`: passed.
 - `npm test`: seven frontend tests passed, including bounded report diff checks.
-- `npm run test:e2e`: nine standard browser tests passed with installed Chrome, fresh
+- `npm run test:e2e`: twelve standard browser tests passed with installed Chrome, fresh
   temporary SQLite database, API, worker and web client. The mobile Settings
   path persists a deadline after reload without horizontal overflow at 390px.
   It also confirms and persists a 30-day retention choice after reload.
@@ -167,7 +167,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   Before to After to the scrollable, labelled diff list.
 - A keyboard-only task-form path verified focus order through all fields and
   submitted with Enter to reach plan review.
-- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all ten browser tests passed on
+- With `NEXUS_E2E_OLLAMA_MODEL=qwen3.5:9b`, all 13 browser tests passed on
   the current checkout;
   the installed model generated a plan, the supervised worker executed it,
   the report write was approved and the task completed.
@@ -263,7 +263,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   tooling. `npm audit --omit=dev --audit-level=high` found zero production
   dependency vulnerabilities. The full audit CI gate remains enabled.
 
-Remote CI for the backup-recovery checkpoint (`9f063cf`) passed API and browser
+Remote CI for the accessibility checkpoint (`cfb609f`) passed API and browser
 jobs but failed the web job at the new `picomatch` dependency audit. The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.

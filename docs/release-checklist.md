@@ -15,8 +15,8 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       production build, dependency audit and isolated browser suite pass.
       Full audit currently fails on unpatched development-tool
       `picomatch` [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf).
-- [ ] Installed-model Ollama plan and execution pass when a local model is
-      available; otherwise record that this gate was not run.
+- [x] Installed-model Ollama plan and execution pass with the local
+      `qwen3.5:9b` model in the opt-in browser suite.
 - [ ] Manual keyboard and assistive technology review, responsive screens,
       recovery fault injection and sustained performance checks are recorded.
 - [ ] User, security, API, architecture, operations and troubleshooting docs
