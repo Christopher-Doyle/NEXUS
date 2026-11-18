@@ -133,6 +133,9 @@ cross-cutting acceptance gap against actual code and test evidence.
 
 - Fresh-database E2E setup applied all seven migrations through
   `f6a916c64f20`.
+- A targeted prior-schema migration test upgraded an existing execution from
+  `a721d11d5509` to head, preserved its receipt, backfilled tool version 1,
+  and passed SQLite integrity and foreign-key checks.
 - A separate local checkout succeeded. Offline installation found uncached
   packages; after approval, `uv sync --extra dev` and `npm ci` installed the
   lockfile dependencies. The clean frontend production build and all seven
@@ -302,8 +305,10 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 ## Exact next task
 
 Complete the manual assistive-technology review and the remaining release
-checklist. Evaluate and apply a reviewed
-upstream `picomatch` fix when available, then rerun the full audit and CI.
+checklist. The owner must decide whether to approve the proposed temporary
+development-tool advisory exception; no exception has been applied. Evaluate
+and apply a reviewed upstream `picomatch` fix when available, then rerun the
+full audit and CI.
 Resolve or explicitly accept the same-user filesystem race for the local
 threat model. The owner must choose a licence and versioning policy before a
 stable release. The one-time outbound authorization has been consumed.

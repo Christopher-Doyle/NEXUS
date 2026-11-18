@@ -9,7 +9,7 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       SSRF, approval and uncertain-recovery tests pass on Linux and Windows.
 - [ ] The same-user report directory replacement race is resolved or its
       residual risk is explicitly accepted for the local threat model.
-- [ ] Database migrations pass from a fresh checkout and from the prior
+- [x] Database migrations pass from a fresh checkout and from the prior
       supported schema. Backup and restore are exercised with artifacts.
 - [ ] Backend tests, Ruff, OpenAPI drift check, frontend tests, type check,
       production build, dependency audit and isolated browser suite pass.
@@ -31,3 +31,12 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
 
 The verified P0 baseline is 10/10. That percentage measures only baseline
 functional IDs and is not a release-readiness percentage.
+
+## Manual release decisions
+
+- Test dashboard, plan, approval, cockpit, report comparison and Settings
+  with a screen reader and keyboard at desktop and mobile widths.
+- Owner: accept or require further mitigation of the documented same-user
+  report-directory race for a strictly local single-owner release.
+- Owner: choose the licence and versioning policy; decide whether to approve
+  the narrowly scoped dependency exception proposed in `security-audit.md`.
