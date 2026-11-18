@@ -263,7 +263,7 @@ cross-cutting acceptance gap against actual code and test evidence.
   tooling. `npm audit --omit=dev --audit-level=high` found zero production
   dependency vulnerabilities. The full audit CI gate remains enabled.
 
-Remote CI for the accessibility checkpoint (`cfb609f`) passed API and browser
+Remote CI for the release-evidence checkpoint (`891a657`) passed API and browser
 jobs but failed the web job at the new `picomatch` dependency audit. The
 worker-startup clock issue found in the earlier Linux run is fixed and
 covered by a 100-second monotonic-clock test.
@@ -280,9 +280,10 @@ next full run passed.
 
 ## Version control
 
-The optional light appearance and refreshed screenshots passed local frontend
-and browser regression. GitHub CI must still validate this checkpoint; the
-full dependency audit is known to fail on the upstream advisory.
+The optional light appearance, refreshed screenshots, restored-read backup
+check and 13-case installed-model browser suite passed locally. `main` is
+pushed and clean at this checkpoint. The latest GitHub API and browser jobs
+passed, while the web job failed solely at the full dependency audit.
 
 ## Known risks
 
@@ -295,8 +296,9 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Verify Linux CI for this checkpoint and complete the remaining manual and
-recovery acceptance checks. Monitor for a reviewed upstream `picomatch` patch and update the
-lockfile when available; the full audit gate is currently a release blocker.
-The one-time outbound authorization has been consumed. Continue with the
-remaining v1 release criteria in the requirement matrix.
+Complete the manual assistive-technology review, a sustained task-execution
+load check and the remaining release checklist. Evaluate and apply a reviewed
+upstream `picomatch` fix when available, then rerun the full audit and CI.
+Resolve or explicitly accept the same-user filesystem race for the local
+threat model. The owner must choose a licence and versioning policy before a
+stable release. The one-time outbound authorization has been consumed.
