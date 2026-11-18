@@ -250,6 +250,11 @@ cross-cutting acceptance gap against actual code and test evidence.
   4.27 ms p95 and 23.41 ms maximum, about 1,161.2 requests per second.
   This is loopback database-readiness throughput on one host, not task
   execution or multi-user capacity.
+- `python scripts/measure_worker.py --tasks 40` used a fresh migrated SQLite
+  database, synthetic local notes and the production supervised worker on
+  Windows 11 / Python 3.13.16. All 40 tasks completed with 40 single-attempt
+  receipts in 46.73 seconds (0.86 tasks/second), with no failed or pending
+  steps. This is a bounded one-worker sample, not a capacity guarantee.
 - An isolated migrated task with only one `fetch_url` step reached completed
   after exact approval for `https://example.com/`. The one-shot harness
   counted zero outbound requests before approval and exactly one after;
@@ -296,8 +301,8 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Complete the manual assistive-technology review, a sustained task-execution
-load check and the remaining release checklist. Evaluate and apply a reviewed
+Complete the manual assistive-technology review and the remaining release
+checklist. Evaluate and apply a reviewed
 upstream `picomatch` fix when available, then rerun the full audit and CI.
 Resolve or explicitly accept the same-user filesystem race for the local
 threat model. The owner must choose a licence and versioning policy before a

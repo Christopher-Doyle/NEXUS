@@ -24,9 +24,10 @@ artifact path, size and digest verification; journal and API error redaction;
 retry keys, lease recovery, write reconciliation and process timeouts. The
 model can propose a plan, but a human still reviews it before execution.
 
-Manual assistive technology review and load/capacity measurements remain
-release gates. Isolated loopback sequential and four-client smoke measurements are recorded
-in the development status. An automated keyboard focus and submission path passed for the
+Manual assistive technology review remains a release gate. Isolated loopback
+sequential and four-client smoke measurements are recorded
+in the development status, along with a 40-task supervised worker sample. An
+automated keyboard focus and submission path passed for the
 task form. A separately cloned checkout installed lockfile
 dependencies, applied seven migrations and passed backend, frontend and
 browser checks. An installed local Ollama model completed a reviewable plan,

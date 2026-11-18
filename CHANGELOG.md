@@ -17,6 +17,8 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
   prompt variants and the existing plan validation boundary.
 - Added a bounded sustained loopback readiness sample to the isolated
   performance script and recorded the measured one-host result.
+- Added an isolated supervised-worker measurement: 40 synthetic local reads
+  completed with 40 single-attempt receipts on Windows.
 - Displayed API validation field paths and correlated server-error references
   in the web client.
 - Added an isolated backup/restore verification script and CI gate covering

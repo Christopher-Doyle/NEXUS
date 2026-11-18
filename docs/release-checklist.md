@@ -17,8 +17,11 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       `picomatch` [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf).
 - [x] Installed-model Ollama plan and execution pass with the local
       `qwen3.5:9b` model in the opt-in browser suite.
-- [ ] Manual keyboard and assistive technology review, responsive screens,
-      recovery fault injection and sustained performance checks are recorded.
+- [x] Automated keyboard paths, responsive screens, recovery fault injection,
+      a sustained loopback readiness sample and a 40-task supervised worker
+      sample are recorded.
+- [ ] Manual assistive technology review is recorded with an actual screen
+      reader and keyboard on the supported desktop and mobile views.
 - [ ] User, security, API, architecture, operations and troubleshooting docs
       match observed behavior. Screenshots show the current UI.
 - [ ] Owner decides the legal license and versioning policy. No license is
