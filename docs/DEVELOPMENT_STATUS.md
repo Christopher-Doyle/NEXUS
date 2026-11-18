@@ -265,11 +265,12 @@ cross-cutting acceptance gap against actual code and test evidence.
   receipt response. This exercised the direct task worker path, not the
   supervised child on a live connection. The owner-approved one-time public
   authorization is consumed.
-- On 2026-11-18, full `npm audit --audit-level=high` failed with five findings
-  from the new `picomatch@4.0.7` ReDoS advisory; the upstream advisory lists
-  no patched version. The affected package is in Vite/Vitest development
-  tooling. `npm audit --omit=dev --audit-level=high` found zero production
-  dependency vulnerabilities. The full audit CI gate remains enabled.
+- On 2026-11-18, the owner approved a 30-day exception solely for
+  `picomatch@4.0.7` advisory GHSA-fc5q-39xc-vjpf in the current development-only
+  Vite/Vitest dependency tree. The full npm audit JSON is still inspected in CI;
+  other high/critical findings and changes to the approved dependency tree
+  remain blocking. A separate production audit is required. The exception
+  expires end of 2026-12-18 UTC, and does not patch the underlying vulnerability.
 
 Remote CI for the release-evidence checkpoint (`891a657`) passed API and browser
 jobs but failed the web job at the new `picomatch` dependency audit. The
@@ -305,10 +306,9 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 ## Exact next task
 
 Complete the manual assistive-technology review and the remaining release
-checklist. The owner must decide whether to approve the proposed temporary
-development-tool advisory exception; no exception has been applied. Evaluate
-and apply a reviewed upstream `picomatch` fix when available, then rerun the
-full audit and CI.
-Resolve or explicitly accept the same-user filesystem race for the local
-threat model. The owner must choose a licence and versioning policy before a
-stable release. The one-time outbound authorization has been consumed.
+checklist, verify the approved narrowly scoped audit policy on GitHub Actions,
+and remove it when a patched dependency is available. Owner approved the MIT
+licence, Semantic Versioning and the documented same-user local-only threat
+model limitation on 2026-11-18. No stable v1.0.0 release or tag has been
+created; all remaining release gates must pass before tagging. The one-time
+outbound authorization has been consumed.

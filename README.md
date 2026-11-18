@@ -184,6 +184,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and checks. Explain the p
 
 Built by **[Christopher Doyle](https://github.com/Christopher-Doyle)** as part of a four-project December 2026 engineering portfolio series.
 
-## Licence
+## Licence and release policy
 
-A licence has **not yet been selected**. Until a licence file is added, please do not assume permission to reuse or redistribute the code. The README and project plan are provided for viewing.
+Licensed under the [MIT License](LICENSE), Copyright (c) 2026 Christopher Doyle.
+NEXUS uses [Semantic Versioning](https://semver.org/). The planned first stable
+release is `v1.0.0`, but **no stable version has been tagged** while manual
+release checks remain open. See the [release policy](docs/release-policy.md),
+[release checklist](docs/release-checklist.md) and [security audit](docs/security-audit.md)
+for the temporary development-tool advisory exception and local-only risks.

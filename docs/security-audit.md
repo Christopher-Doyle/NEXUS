@@ -15,21 +15,34 @@ code, backend tests, process-kill tests and browser suite at this checkpoint.
 | Medium | App-owned report directories are checked before writes, but another process running as the same OS user could redirect a directory between validation and file creation. | Mitigated on POSIX by no-follow, directory-relative exclusive creation and identity checks. Windows still has a checked-path fallback. A hostile same-user process can move directories or alter local data; full resistance requires process isolation. |
 | Medium | Task evidence and model planning data live in local SQLite. Manual or age-based deletion removes logical records and owned files, but SQLite WAL pages, backups and filesystem snapshots are not securely erased. | Open. An opt-in 30/90/365 day policy now prunes terminal tasks in bounded batches. Add an operator-controlled compaction/backup policy before claiming secure erasure. |
 | Low | Mutation and planning rate limits are in process and reset on restart. | Open. Suitable only as a local resource guard; a remote deployment would need durable limits. Mutating request bodies are now capped at 512 KiB, including streamed bodies. |
-| High in development tooling | `picomatch@4.0.7` in Vite/Vitest and their transitive packages is affected by [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), a ReDoS issue in repeated extglob patterns. | Open as of 2026-11-18: upstream lists no patched version. Full `npm audit --audit-level=high` fails with five findings; `npm audit --omit=dev --audit-level=high` reports zero shipped-runtime findings. Keep untrusted glob patterns out of local development commands. Do not weaken the full CI audit gate to obtain a green status. |
+| High in development tooling | `picomatch@4.0.7` in Vite/Vitest and their transitive packages is affected by [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), a ReDoS issue in repeated extglob patterns. | Owner-approved 30-day exception, strictly scoped to trusted local development tooling until end of 2026-12-18 UTC. The full audit still runs; CI rejects every other high/critical issue. Production audit remains mandatory. Not patched. |
 
-### Proposed temporary dependency exception — owner approval required
+### Temporary dependency exception — owner-approved 2026-11-18
 
-The lockfile resolves `picomatch@4.0.7` through Vite 7.3.8 (directly and via
-`fdir`/`tinyglobby`) and Vitest 5.1.0. The reviewed advisory lists no patched
-release as of 2026-11-18. A possible temporary exception would apply **only**
-to GHSA-fc5q-39xc-vjpf in these development tools, for local trusted build
-and test commands. It would not permit untrusted glob input, change runtime
-dependencies, suppress other advisories, or authorize remote deployment.
-Require a clean production-dependency audit. If approved, CI would retain the
-raw full-audit output, allow only this advisory ID in the development tree,
-and fail on every other high finding or a changed dependency path. Review the
-exception at each release candidate and remove it when a compatible patched
-release is available. No CI exception or release acceptance has been implemented.
+The owner accepted a narrowly scoped, **temporary** exception for
+[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
+only in the current Vite/Vitest development dependency chain. It expires at
+the end of **2026-12-18 UTC**, and must be reviewed for each release candidate
+and removed as soon as a compatible fixed version becomes available.
+
+The CI policy in `apps/web/scripts/audit-dependencies.mjs` runs and prints the
+**full npm audit JSON**, allows this exact high-severity advisory only with
+unchanged development-only package names, versions and install paths, and fails
+for other high/critical findings or a changed dependency tree. CI also runs a
+separate production-dependency audit. No untrusted glob expressions may be
+passed to developer tooling. This is not an assertion that the vulnerability
+is fixed, not an approval for remote deployment, and not a standing waiver.
+
+### Owner acceptance — strictly local single-owner filesystem threat model
+
+On 2026-11-18 the owner accepted the documented residual same-user
+report-directory replacement race **only** for local-only, single-owner use,
+where no hostile process operates with the same OS-user privileges. Existing
+POSIX directory-handle mitigations and Windows path checks remain in place.
+This does **not** provide isolation from malware or other same-user processes;
+if that threat model changes, the risk acceptance no longer applies and the
+release requires a new security assessment. SQLite deletion remains logical,
+not secure erasure; the owner has not approved any claim of secure deletion.
 
 Trust boundaries checked: task capability grants and plan argument hashes;
 approval scope and expiry; source text treated as data; local Ollama origin and

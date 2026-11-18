@@ -4,6 +4,13 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 
 ## Unreleased — 2026-11-18
 
+- Added the owner-approved MIT licence and Semantic Versioning policy; stable
+  `v1.0.0` remains gated on manual release checks and final CI.
+- Applied a time-limited, strict development-tool audit policy for the single
+  `picomatch` GHSA-fc5q-39xc-vjpf advisory, with a separate production audit.
+- Recorded owner acceptance of the documented same-user filesystem limitation
+  exclusively for local single-owner use.
+
 - Added a browser-persisted optional light appearance with a mobile automated
   accessibility and contrast check; dark remains the default.
 - Recorded the newly reported unpatched `picomatch` ReDoS advisory in
