@@ -30,6 +30,8 @@ See [security audit](security-audit.md) for the precise limitations.
 
 ## Unresolved manual release gate
 
-An actual manual screen-reader and keyboard review is still required on the documented
-desktop/mobile workflows. Do not mark the application stable or create `v1.0.0`
-until the result is recorded and remaining release gates pass.
+On 2026-11-18 the owner reported successful desktop keyboard navigation and
+Windows Narrator announcements of buttons, labels and status messages in NEXUS.
+A documented view-by-view assistive-technology check at mobile width is still
+outstanding. Do not mark the application stable or create `v1.0.0` until that
+check and the remaining release gates pass.

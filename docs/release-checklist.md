@@ -19,6 +19,9 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       `picomatch` [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
       through 2026-12-18; CI must verify the narrowly scoped policy and
       independently pass the production audit before this gate is checked.
+      CI at `75a7151` passed API, web and browser jobs with the restricted
+      audit exception and separate production audit; rerun on final release
+      candidate after any further documentation or code changes.
 - [x] Installed-model Ollama plan and execution pass with the local
       `qwen3.5:9b` model in the opt-in browser suite.
 - [x] Automated keyboard paths, responsive screens, recovery fault injection,
@@ -26,6 +29,10 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       sample are recorded.
 - [ ] Manual assistive technology review is recorded with an actual screen
       reader and keyboard on the supported desktop and mobile views.
+      On 2026-11-18 the owner reported successful keyboard navigation and
+      Windows Narrator announcements of buttons, labels and status messages
+      while using NEXUS on desktop. A documented view-by-view and narrow-width
+      Narrator pass is still outstanding; do not mark this gate complete.
 - [ ] User, security, API, architecture, operations and troubleshooting docs
       match observed behavior. Screenshots show the current UI.
 - [x] Owner approved MIT licensing and Semantic Versioning on 2026-11-18.
@@ -46,5 +53,8 @@ functional IDs and is not a release-readiness percentage.
   hostile same-user environment.
 - Owner approved the MIT licence, Semantic Versioning and the narrowly scoped
   dependency exception expiring end of 2026-12-18 UTC.
-- Still outstanding: a real manual screen-reader review and the final tested
-  release-candidate CI result.
+- Owner-reported desktop Windows Narrator and keyboard checks passed on
+  2026-11-18, including announcements of controls and status messages.
+  A view-by-view review at mobile width is still outstanding.
+- The three GitHub CI jobs passed at `75a7151`; final release candidate
+  verification and release notes must still be completed.

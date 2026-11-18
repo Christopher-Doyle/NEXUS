@@ -287,6 +287,23 @@ planner was constrained to the task's actual selected filenames. The first
 full run exposed a hallucinated read path; that validation was added and the
 next full run passed.
 
+## Manual owner verification — 2026-11-18
+
+The owner ran NEXUS locally, successfully created and executed tasks with
+approval-gated report writes, opened a generated report in Downloads and
+compared two reports in the artifact view. The owner stated that a task was
+planned with Ollama; a previously recorded automated browser suite also
+verified installed-model planning and execution. The owner reported that
+keyboard navigation worked and Windows Narrator announced buttons, labels
+and status messages. This is user-reported desktop verification, not an
+independent assistive-technology certification or a completed mobile-width
+screen-reader review.
+
+At commit `75a7151`, all three GitHub Actions CI jobs passed, including the
+owner-approved, advisory-specific temporary development-tool audit policy
+and the separate production dependency audit. The final release candidate
+must be verified again after any further changes.
+
 ## Version control
 
 The optional light appearance, refreshed screenshots, restored-read backup
