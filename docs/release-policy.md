@@ -37,5 +37,9 @@ mobile navigation worked after the requested Narrator check. This is
 owner-reported manual evidence on a desktop browser, **not** an independent
 assistive-technology certification or a physical-device test.
 
-Do not create `v1.0.0` until the remaining scope, documentation and final
-release-candidate CI checks are completed and recorded in the release checklist.
+The owner approved publication of `v1.0.0` on 2026-11-18 for the documented
+local-only, single-user scope with the listed accepted limitations. The
+release workflow creates the tag and official GitHub Release **only after**
+the release-candidate commit's API, web and browser CI jobs all succeed and
+`main` still points to that commit. The temporary development-only advisory
+exception still expires end of 2026-12-18 UTC.

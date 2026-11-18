@@ -1,0 +1,51 @@
+name: Publish NEXUS v1.0.0 after CI
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nexus-v1.0.0-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == 'Christopher-Doyle/NEXUS' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the successfully tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Create official release only for its approved candidate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$(git log -1 --format=%s)" != "release: prepare NEXUS v1.0.0" ]]; then
+            echo "Not the explicitly authorised v1.0.0 release candidate; nothing to publish."
+            exit 0
+          fi
+          current="$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$current" != "$CANDIDATE_SHA" ]]; then
+            echo "Main has moved since the release candidate was tested; refusing stale release."
+            exit 1
+          fi
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            echo "v1.0.0 already published; leaving existing release unchanged."
+            exit 0
+          fi
+          test -f docs/releases/v1.0.0.md
+          gh release create v1.0.0 --target "$CANDIDATE_SHA" \
+            --title "NEXUS v1.0.0 — Local AI Workflows" \
+            --notes-file docs/releases/v1.0.0.md
+          echo "Official NEXUS v1.0.0 release created."

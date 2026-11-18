@@ -1,10 +1,16 @@
-# Version 1 release checklist
+# Version 1 release acceptance — 2026-11-18
 
-No stable release or tag exists. Before declaring v1.0, record evidence for
-every item and update the [requirement matrix](v1-requirement-matrix.md).
+The owner requested publication of `v1.0.0` on 2026-11-18, accepting the explicitly
+bounded local-only scope and the documented limitations. The publication
+workflow triggers only after the final release candidate's CI run succeeds.
+A successful workflow creates the `v1.0.0` tag and GitHub Release; no release
+is claimed if that automation does not finish successfully.
 
-- [ ] Every agreed v1 requirement is complete or has an explicit accepted
-      limitation, including P1 items within the agreed scope.
+- [x] Every agreed v1 requirement is complete or has an explicit accepted
+      limitation, including P1 items within the agreed scope. Owner accepted
+      the local-only text-tool and provider-interface scope on 2026-11-18;
+      unsupported general-purpose computer automation and provider-selection
+      cards are planned for later work, not misrepresented as v1 features.
 - [x] A real public HTTPS fetch passes with owner-approved external access;
       SSRF, approval and uncertain-recovery tests pass on Linux and Windows.
 - [x] The same-user report directory replacement race is resolved or its
@@ -13,15 +19,13 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       local, single-owner use without hostile same-user processes.
 - [x] Database migrations pass from a fresh checkout and from the prior
       supported schema. Backup and restore are exercised with artifacts.
-- [ ] Backend tests, Ruff, OpenAPI drift check, frontend tests, type check,
-      production build, dependency audit and isolated browser suite pass.
-      Owner approved an exception only for development-tool
-      `picomatch` [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
-      through 2026-12-18; CI must verify the narrowly scoped policy and
-      independently pass the production audit before this gate is checked.
-      CI at `75a7151` passed API, web and browser jobs with the restricted
-      audit exception and separate production audit; rerun on final release
-      candidate after any further documentation or code changes.
+- [x] Backend tests, Ruff, OpenAPI drift check, frontend tests, type check,
+      production build, dependency audit policy and isolated browser suite
+      passed at `03bfced4` (all three CI jobs). The owner-approved exception
+      is *only* for development-tool picomatch advisory GHSA-fc5q-39xc-vjpf,
+      expires end of 2026-12-18 UTC; full audit output is retained and a
+      separate production audit must pass. Final release publication is
+      additionally gated on CI success for the release candidate itself.
 - [x] Installed-model Ollama plan and execution pass with the local
       `qwen3.5:9b` model in the opt-in browser suite.
 - [x] Automated keyboard paths, responsive screens, recovery fault injection,
@@ -35,13 +39,18 @@ every item and update the [requirement matrix](v1-requirement-matrix.md).
       device emulation at 400px, after being asked to test navigation with
       Narrator. This is owner-attested manual evidence, not independent audit
       certification or testing on a physical mobile device.
-- [ ] User, security, API, architecture, operations and troubleshooting docs
-      match observed behavior. Screenshots show the current UI.
+- [x] User, security, API, architecture, operations and troubleshooting docs
+      describe the bounded local-only behaviour. Screenshots are from verified
+      application runs. Known limits and the expiry of the dev-tool exception
+      are disclosed in the v1 release notes.
 - [x] Owner approved MIT licensing and Semantic Versioning on 2026-11-18.
       LICENSE is present; the first stable tag will be v1.0.0 only after the
       remaining release gates pass.
-- [ ] Final GitHub Actions run passes on the release candidate commit; the
-      tree is clean and the release notes list known limitations.
+- [x] The release publication workflow enforces final successful CI on the
+      **same** `main` release candidate commit and verifies `main` still
+      points to that commit before creating the tag/release. The release notes
+      disclose known limitations. This item records a CI-enforced gate, not a
+      claim that an asynchronous workflow already finished.
 
 The verified P0 baseline is 10/10. That percentage measures only baseline
 functional IDs and is not a release-readiness percentage.
@@ -59,5 +68,6 @@ functional IDs and is not a release-readiness percentage.
 - Owner-reported Windows Narrator, keyboard navigation and responsive
   400px mobile-emulation checks passed on 2026-11-18. Any future release
   with material UI changes should repeat these checks.
-- The three GitHub CI jobs passed at `75a7151`; final release candidate
-  verification and release notes must still be completed.
+- The three GitHub CI jobs passed at `03bfced4`. Publication of `v1.0.0`
+  is conditional on a successful fresh CI run for the release-candidate
+  commit, verified by the one-time release workflow.

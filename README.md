@@ -6,7 +6,7 @@
 
 **AI orchestration · Python · FastAPI · React · TypeScript · Ollama**
 
-![Status](https://img.shields.io/badge/status-working%20local%20demo-64748b?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
+![Status](https://img.shields.io/badge/status-v1.0%20local--only-22c55e?style=flat-square) ![Focus](https://img.shields.io/badge/focus-nexus-8b5cf6?style=flat-square) ![Budget](https://img.shields.io/badge/software%20budget-R0-16a34a?style=flat-square)
 
 [Overview](#overview) · [Features](#implemented-capabilities) · [Run locally](#run-locally) · [Architecture](#architecture) · [Roadmap](#roadmap)
 
@@ -23,7 +23,7 @@ NEXUS is a local personal AI operations console: users define an objective, revi
 
 ## Project status
 
-> **Working local demo in development** — Tasks, plans, approvals, journals and artifacts persist in SQLite. A supervised worker runs four allowlisted tools with bounded timeouts and exact approval for writes and opt-in HTTPS fetch. The cockpit shows receipts and report recovery. History exports task records; inactive tasks can be deleted, and terminal-task retention is optional. The artifact library previews and compares verified reports. Automated backend, frontend and browser checks cover the local workflow. One owner-approved public HTTPS fetch completed through the task and approval path. Manual assistive technology review and other [release gates](docs/release-checklist.md) remain open. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [security review](docs/security-audit.md) and [changelog](CHANGELOG.md).
+> **NEXUS v1.0 local-only** — Tasks, plans, approvals, journals and artifacts persist in SQLite. A supervised worker runs four allowlisted tools with bounded timeouts and exact approval for writes and opt-in HTTPS fetch. The cockpit shows receipts and report recovery. History exports task records; inactive tasks can be deleted, and terminal-task retention is optional. The artifact library previews and compares verified reports. Automated backend, frontend and browser checks cover the local workflow. One owner-approved public HTTPS fetch completed through the task and approval path. Windows Narrator, keyboard and 400px responsive-emulation checks were owner-reported as passing. This is a local-only release, **not** a hosted general-purpose agent or independently certified accessible product. The [release checklist](docs/release-checklist.md) and [release policy](docs/release-policy.md) disclose accepted limitations. See [development status](docs/DEVELOPMENT_STATUS.md), [v1 requirement matrix](docs/v1-requirement-matrix.md), [security review](docs/security-audit.md) and [changelog](CHANGELOG.md).
 
 ### Verified local demo
 
@@ -174,7 +174,8 @@ NEXUS/
 - [x] **Core demo:** implement the primary workflow end-to-end with deterministic fixtures
 - [x] **Reliability baseline:** input validation, recovery, bounded tools and automated tests
 - [x] **Experience baseline:** responsive dashboard, mobile navigation, keyboard path and automated WCAG checks
-- [ ] **Release:** complete remaining security, manual accessibility and verification gates before a versioned release
+- [x] **Release scope:** v1.0 local-only features tested; owner-approved residual risks and temporary development-tool advisory exception documented
+- [ ] **Next iteration (post-v1):** improve visual design, colours, UX flow and discoverable model selection. Explore provider cards with installed/available models instead of requiring typed model names; do not imply unsupported providers are integrated.
 
 ## Contributing
 

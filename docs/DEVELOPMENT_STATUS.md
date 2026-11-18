@@ -2,9 +2,11 @@
 
 ## Milestone and measured progress
 
-Milestone 1 is complete. Milestones 2-6 have a working local demo path and
-remain open for broader requirements. Milestone 7 is underway; Milestone 8
-is not release-ready.
+Milestone 1 and the bounded v1 local-only workflow are complete. The owner
+accepted the documented v1 scope and security limitations on 2026-11-18.
+Version 1.0 publication is gated on a successful GitHub Actions run against
+its exact release candidate. Broader capabilities and a refreshed UI remain
+post-v1 development.
 
 The design specification has 10 P0 IDs: NX-F01 through NX-F07 and NX-N01
 through NX-N03. All ten have verified baseline behavior, so functional P0
@@ -325,11 +327,11 @@ have a same-user directory-swap race; SQLite deletion is not secure erasure.
 
 ## Exact next task
 
-Finish the remaining release checklist, including explicit v1 scope acceptance
-and final documentation review, then verify CI on the release-candidate
-commit. The documented accessibility review is owner-attested as passed.
-Remove the temporary narrow audit exception when a patched dependency is
-available. Owner approved the MIT
+Publish the GitHub `v1.0.0` tag and release only if the candidate's fresh
+API/web/browser CI run succeeds. After release, future work may improve UI
+visuals, theme, usability, and provider/model selection cards. Remove the
+narrow audit exception as soon as a compatible patched version is available.
+Owner approved the MIT
 licence, Semantic Versioning and the documented same-user local-only threat
 model limitation on 2026-11-18. No stable v1.0.0 release or tag has been
 created; all remaining release gates must pass before tagging. The one-time

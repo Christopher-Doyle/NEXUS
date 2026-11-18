@@ -1,8 +1,14 @@
 # Changelog
 
-This file tracks development checkpoints. NEXUS has not had a stable release.
+This file tracks development checkpoints and versioned releases.
 
-## Unreleased — 2026-11-18
+## 1.0.0 — 2026-11-18
+
+- Initial local-only, single-user release; baseline requirements NX-F01–NX-F07 and NX-N01–NX-N03 are implemented and verified. NEXUS is an approval-gated workflow console, not an unrestricted computer agent.
+- Owner-reported desktop Narrator/keyboard and 400px browser-emulation checks passed. Real local Ollama planning and supervised execution were verified.
+- The owner accepted documented same-user filesystem limitations for trusted local use and approved a strictly scoped development-only picomatch advisory exception through 2026-12-18. Neither claim constitutes a security fix.
+- Release publication is gated on a clean GitHub Actions CI run from this exact release candidate.
+
 
 - Added the owner-approved MIT licence and Semantic Versioning policy; stable
   `v1.0.0` remains gated on manual release checks and final CI.
@@ -14,7 +20,7 @@ This file tracks development checkpoints. NEXUS has not had a stable release.
 - Added a browser-persisted optional light appearance with a mobile automated
   accessibility and contrast check; dark remains the default.
 - Recorded the newly reported unpatched `picomatch` ReDoS advisory in
-  development tooling; the full npm audit and web CI gate remain failing.
+  development tooling; the approved exact-advisory audit policy retains full audit output, with all other high/critical findings blocked and the production audit required.
 - Verified one owner-approved public HTTPS request to `https://example.com/`
   through an isolated NEXUS task after exact approval, with one outbound call
   and no private inputs.
